@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script src="auth_guard.js"></script>
+  <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANUBIS BOX – Clientes</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="shortcut icon" type="image/png" href="assets/logo.png">
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+        header{background:#1a1d27;border-bottom:2px solid #c9952a;padding:0 32px;height:80px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+        .nav-left{grid-column:1;display:flex;align-items:center;gap:8px}
+        .header-logo{grid-column:2;display:flex;justify-content:center;align-items:center}
+        .header-logo img{height:64px;object-fit:contain}
+        .container{max-width:1200px;margin:32px auto;padding:0 24px}
+        .card{background:#1a1d27;border-radius:12px;padding:24px;margin-bottom:24px;border:1px solid #2a2d3a;box-shadow:0 8px 16px rgba(0,0,0,.4),0 0 20px rgba(201,149,42,.08);transition:transform .3s,box-shadow .3s;border-top:2px solid #c9952a}
+        .card:hover{transform:translateY(-8px);box-shadow:0 2px 8px rgba(201,149,42,.4),0 8px 24px rgba(201,149,42,.25),0 16px 40px rgba(201,149,42,.12)}
+        .card h2{color:#c9952a;font-size:14px;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+        .form-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+        .form-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+        label{font-size:12px;color:#888;display:block;margin-bottom:4px}
+        label span{color:#c9952a}
+        input,select{width:100%;padding:10px 12px;background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;color:#e0e0e0;font-size:14px;transition:border .2s}
+        input:focus,select:focus{outline:none;border-color:#c9952a}
+        input.error,select.error{border-color:#f87171}
+        .required-note{font-size:11px;color:#555;margin-bottom:12px}
+        .required-note span{color:#c9952a}
+        .btn{padding:9px 18px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
+        .btn-primary{background:#c9952a;color:#000}
+        .btn-primary:hover{background:#e0a830;transform:translateY(-1px)}
+        .btn-edit{background:#1a2a3a;color:#60aaee;border:1px solid #1e3a5a;padding:5px 12px;font-size:12px;border-radius:6px;cursor:pointer}
+        .btn-edit:hover{background:#1e3a5a}
+        .btn-save{background:#c9952a;color:#000;padding:9px 22px}
+        .btn-save:hover{background:#e0a830}
+        .btn-cancel{background:#2a2d3a;color:#888;padding:9px 22px}
+        .btn-cancel:hover{background:#3a3d4a;color:#ccc}
+        .btn-icon{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:1px solid #2a2d3a;color:#888;border-radius:8px;cursor:pointer;font-size:16px;transition:all .2s}
+        .btn-icon:hover{border-color:#c9952a;color:#c9952a;background:#15171f}
+        table{width:100%;border-collapse:collapse;font-size:13px;min-width:720px}
+        th{color:#888;font-size:11px;text-align:left;padding:10px 14px;border-bottom:1px solid #2a2d3a;text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+        td{padding:10px 14px;border-bottom:1px solid #1f2231;vertical-align:middle;white-space:nowrap}
+        td:nth-child(4), th:nth-child(4){text-align:center;min-width:90px}
+        td:nth-child(5), th:nth-child(5){text-align:center;min-width:90px}
+        tr:hover td{background:#1f2231}
+        .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+        .badge-activo{background:#1a3a2a;color:#4ade80}
+        .badge-inactivo{background:#3a1a1a;color:#f87171}
+        .badge-suspendido{background:#3a2a00;color:#f0c060}
+        .badge-efectivo{background:#1a2a3a;color:#60aaee}
+        .badge-transferencia{background:#2a1a3a;color:#c084fc}
+        .alerta{background:#3a2a00;border:1px solid #c9952a;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#f0c060}
+        .alerta-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+        .alerta-close{width:26px;height:26px;border:none;border-radius:6px;background:rgba(255,255,255,.08);color:#f8e7b2;cursor:pointer;font-size:16px;line-height:1}
+        .alerta-close:hover{background:rgba(255,255,255,.16);color:#fff}
+        .alerta-creditos{background:#3a2a00;border:1px solid #c9952a;color:#f8e7b2}
+        .alerta-creditos strong{color:#fff}
+        .creditos-alert-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:-8px;margin-bottom:16px;padding:12px 16px;border-radius:8px}
+        .credito-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(201,149,42,.14);border:1px solid rgba(201,149,42,.45);border-radius:6px;font-size:12px}
+        .credito-chip strong{font-size:14px;color:#fff}
+        .credito-chip.agotado{background:#4a1f00;border-color:#e0a830;color:#fff}
+        .fila-creditos-bajos td{background:rgba(201,149,42,.18)}
+        .fila-creditos-bajos:hover td{background:rgba(201,149,42,.24)}
+        .empty{text-align:center;color:#444;padding:40px}
+        .detalle-pareja{background:#15171f}
+        .detalle-pareja td{padding:0;border:none}
+        .detalle-body{overflow:hidden;max-height:0;opacity:0;transition:max-height .3s ease,opacity .3s ease}
+        .detalle-pareja.open .detalle-body{max-height:200px;opacity:1}
+        .detalle-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:14px 18px;font-size:13px;color:#ccc}
+        .detalle-grid div{background:#0f1117;border:1px solid #2a2d3a;border-radius:10px;padding:12px}
+        .detalle-grid div strong{display:block;color:#fff;margin-bottom:6px;font-size:12px}
+        .detalle-toggle{background:#2a2d3a;color:#fff;border:1px solid #2a2d3a;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;margin-right:6px}
+        .detalle-toggle.info{background:#2a260f;color:#f8e7b2;border-color:#c9952a}
+        .detalle-toggle.info:hover{background:#3a2a00}
+        /* Selector de método de pago */
+        .metodo-selector{display:flex;gap:8px}
+        .metodo-btn{flex:1;padding:10px;border-radius:8px;border:1px solid #2a2d3a;background:#0f1117;color:#888;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;text-align:center}
+        .metodo-btn:hover{border-color:#555;color:#ccc}
+        .metodo-btn.selected-efectivo{border-color:#60aaee;background:#1a2a3a;color:#60aaee}
+        .metodo-btn.selected-transferencia{border-color:#c084fc;background:#2a1a3a;color:#c084fc}
+        /* Modal */
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center}
+        .modal-overlay.show{display:flex}
+        .modal{background:#1a1d27;border:1px solid #2a2d3a;border-radius:16px;padding:28px;width:100%;max-width:700px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 48px rgba(0,0,0,.7);animation:slideUp .25s ease}
+        @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #2a2d3a}
+        .modal-header h3{color:#c9952a;font-size:15px;text-transform:uppercase;letter-spacing:1px}
+        .modal-close{background:transparent;border:none;color:#555;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .2s;line-height:1}
+        .modal-close:hover{background:#2a2d3a;color:#ccc}
+        .modal-section{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin:16px 0 10px;padding-bottom:4px;border-bottom:1px solid #22253a}
+        .modal-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px}
+        .modal-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:4px}
+        .info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+        .info-item{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:12px;min-width:0}
+        .info-item strong{display:block;color:#c9952a;font-size:11px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+        .info-item span{display:block;color:#e0e0e0;white-space:normal;word-break:break-word}
+        .modal-content{overflow-y:auto;flex:1;padding-right:8px;margin-right:-8px}
+        .modal-content::-webkit-scrollbar{width:6px}
+        .modal-content::-webkit-scrollbar-track{background:#1a1d27}
+        .modal-content::-webkit-scrollbar-thumb{background:#2a2d3a;border-radius:3px}
+        .modal-content::-webkit-scrollbar-thumb:hover{background:#3a3d4a}
+        .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid #2a2d3a;flex-shrink:0}
+        .toast{position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;max-width:380px}
+        .toast.show{opacity:1;transform:translateY(0)}
+        .toast.ok{background:#1a3a2a;color:#4ade80;border:1px solid #4ade80}
+        .toast.err{background:#3a1a1a;color:#f87171;border:1px solid #f87171}
+        /* Sidebar menú lateral */
+        .menu-toggle{background:transparent;border:1px solid #2a2d3a;color:#aaa;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;gap:8px}
+        .menu-toggle:hover{border-color:#c9952a;color:#c9952a}
+        .sidebar{position:fixed;left:0;top:0;height:100%;width:260px;background:#0f1117;border-right:1px solid #2a2d3a;transform:translateX(-110%);transition:transform .25s ease;z-index:1001;padding:22px;display:flex;flex-direction:column;gap:8px}
+        .sidebar.open{transform:translateX(0)}
+        .sidebar .logo{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+        .sidebar .logo img{height:44px}
+        .sidebar nav{display:flex;flex-direction:column;gap:4px;margin-top:12px}
+        .sidebar a{color:#ccc;text-decoration:none;padding:10px 12px;border-radius:8px;display:flex;align-items:center;gap:8px}
+        .sidebar a:hover{background:#1a1d27;color:#c9952a}
+        .sidebar a.active{color:#c9952a;font-weight:600}
+        .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s}
+        .sidebar-overlay.show{opacity:1;pointer-events:auto}
+        .hidden{display:none}
+        /* Tabla retractable */
+        .tabla-container{overflow:hidden;transition:max-height .3s ease,opacity .3s ease;max-height:600px;opacity:1}
+        .tabla-container.collapsed{max-height:0;opacity:0;pointer-events:none}
+        .tabla-toggle-btn{background:transparent;border:1px solid #2a2d3a;color:#888;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;gap:6px;transition:all .2s;margin-left:12px}
+        .tabla-toggle-btn:hover{border-color:#c9952a;color:#c9952a}
+        .tabla-toggle-btn.collapsed{transform:rotate(180deg)}
+        .card-header{display:flex;align-items:center;justify-content:space-between}
+        .registro-container{overflow:hidden;transition:max-height .3s ease,opacity .3s ease;max-height:900px;opacity:1}
+        .registro-container.collapsed{max-height:0;opacity:0;pointer-events:none}
+        .registro-toggle-btn.collapsed{transform:rotate(180deg)}
+        .clase-container{overflow:hidden;transition:max-height .3s ease,opacity .3s ease;max-height:420px;opacity:1}
+        .clase-container.collapsed{max-height:0;opacity:0;pointer-events:none}
+        .clase-toggle-btn.collapsed{transform:rotate(180deg)}
+        .mini-note{font-size:11px;color:#777;margin:-4px 0 14px}
+
+        /* ── MODAL RENOVAR ── */
+        .modal-overlay-renovar{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+        .modal-overlay-renovar.show{display:flex}
+        .modal-renovar{background:#1a1d27;border:1px solid #2a2d3a;border-top:3px solid #4ade80;border-radius:16px;padding:28px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 48px rgba(0,0,0,.7);animation:slideUp .25s ease}
+        .modal-renovar .modal-header h3{color:#4ade80}
+        .renovar-cliente-info{background:#0f1117;border-radius:10px;padding:14px 16px;margin-bottom:20px;border:1px solid #2a2d3a;border-left:3px solid #4ade80}
+        .renovar-cliente-info .rci-nombre{font-size:16px;font-weight:700;color:#e0e0e0;margin-bottom:4px}
+        .renovar-cliente-info .rci-plan{font-size:12px;color:#555}
+        .renovar-cliente-info .rci-plan span{color:#c9952a;font-weight:600}
+        .renovar-seccion{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin:16px 0 10px;padding-bottom:4px;border-bottom:1px solid #22253a}
+        .plan-opciones{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+        .plan-opcion{padding:12px 14px;border-radius:10px;border:2px solid #2a2d3a;background:#0f1117;cursor:pointer;transition:all .2s}
+        .plan-opcion:hover{border-color:#555}
+        .plan-opcion.selected{border-color:#4ade80;background:rgba(74,222,128,.07)}
+        .plan-opcion .po-nombre{font-size:13px;font-weight:700;color:#e0e0e0;margin-bottom:2px}
+        .plan-opcion .po-precio{font-size:12px;color:#c9952a;font-weight:600}
+        .plan-opcion .po-dias{font-size:11px;color:#555}
+        .plan-opcion.mismo-plan .po-nombre::after{content:' (actual)';font-size:10px;color:#4ade80;font-weight:400}
+        .renovar-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px}
+        .renovar-monto-preview{background:#0f1117;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:12px;border:1px solid #2a2d3a}
+        .renovar-monto-preview span:first-child{font-size:12px;color:#555;text-transform:uppercase;letter-spacing:.8px}
+        .renovar-monto-preview .monto-val{font-size:20px;font-weight:700;color:#4ade80}
+        .btn-renovar-confirmar{width:100%;padding:13px;background:linear-gradient(135deg,#166534,#15803d);color:#4ade80;font-weight:700;font-size:15px;border:none;border-radius:10px;cursor:pointer;transition:all .2s;margin-top:4px;letter-spacing:.5px}
+        .btn-renovar-confirmar:hover{background:linear-gradient(135deg,#14532d,#166534);box-shadow:0 4px 16px rgba(74,222,128,.25)}
+        .btn-renovar-confirmar:disabled{opacity:.5;cursor:not-allowed}
+        .banco-select-renovar{margin-top:10px;animation:fadeIn .2s ease}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="nav-left">
+        <button id="menuToggle" class="menu-toggle" aria-label="Abrir menú" onclick="toggleSidebar()">☰</button>
+    </div>
+    <div class="header-logo"><img src="assets/logo.png" alt="ANUBIS BOX"></div>
+<div style="grid-column:3;display:flex;justify-content:flex-end;align-items:center;gap:12px">
+    <span id="adminNombre" style="font-size:12px;color:#888"></span>
+    <a href="logout.php"
+       style="background:transparent;border:2px solid #c9952a;color:#c9952a;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.5px;transition:all .2s"
+       onmouseover="this.style.background='rgba(201,149,42,.15)';this.style.boxShadow='0 0 12px rgba(201,149,42,.3)'"
+       onmouseout="this.style.background='transparent';this.style.boxShadow='none'">
+      🚪 Cerrar sesión
+    </a>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar">
+    <div class="logo"><img src="assets/logo.png" alt="ANUBIS BOX"><strong style="color:#c9952a">ANUBIS BOX</strong></div>
+    <nav>
+        <a href="index.html" class="active">👥 Clientes</a>
+        <a href="planes.html">📋 Planes</a>
+        <a href="membresias.html">📦 Membresías</a>
+        <a href="tienda.html">🛒 Tienda</a>
+        <a href="finanzas.html">💰 Finanzas</a>
+    <a href="asistencia.html">✅ Asistencia</a>
+    <a href="horarios.html">🕐 Horarios</a>
+    </nav>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="container">
+
+    <div id="alertas"></div>
+
+    <!-- CLASE UNICA -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Clase única</h2>
+            <button class="btn-icon clase-toggle-btn" id="claseToggle" onclick="toggleClaseUnica()" title="Abrir/contraer clase única">▼</button>
+        </div>
+        <div id="claseUnicaContainer" class="clase-container">
+            <p class="required-note">Este registro va directo a ingresos y no aparece en clientes registrados <span>*</span></p>
+            <p class="mini-note" id="claseUnicaInfo">Cargando valor del plan...</p>
+            <div class="form-grid-4">
+                <div><label>Nombre <span>*</span></label><input id="clase_nombre" placeholder="Ej: Carlos Pérez"></div>
+                <div><label>Cédula <span>*</span></label><input id="clase_cedula" type="number" placeholder="Ej: 1012345678"></div>
+                <div><label>EPS <span>*</span></label><input id="clase_eps" placeholder="Ej: Sura"></div>
+                <div><label>Número <span>*</span></label><input id="clase_numero" placeholder="Ej: 300 123 4567"></div>
+            </div>
+            <div style="margin-bottom:16px">
+                <label style="margin-bottom:8px">Método de pago <span>*</span></label>
+                <div class="metodo-selector">
+                    <div class="metodo-btn" id="btn-clase-efectivo" onclick="seleccionarMetodoClase('EFECTIVO')">💵 Efectivo</div>
+                    <div class="metodo-btn" id="btn-clase-transferencia" onclick="seleccionarMetodoClase('TRANSFERENCIA')">🏦 Transferencia</div>
+                </div>
+                <input type="hidden" id="clase_metodo_pago" value="">
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="registrarClaseUnica()">+ Registrar ingreso</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- REGISTRO -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Registrar cliente</h2>
+            <button class="btn-icon registro-toggle-btn" id="registroToggle" onclick="toggleRegistroClientes()" title="Abrir/contraer registro">▼</button>
+        </div>
+        <div id="registroClientesContainer" class="registro-container">
+        <p class="required-note">Todos los campos son obligatorios <span>*</span></p>
+        <div class="form-grid-3">
+            <div><label>Nombre completo <span>*</span></label><input id="nombre" placeholder="Ej: Carlos Pérez"></div>
+            <div><label>Cédula <span>*</span></label><input id="cedula" type="number" placeholder="Ej: 1012345678"></div>
+            <div><label>Fecha de nacimiento <span>*</span></label><input id="fecha_nacimiento" type="date" onchange="actualizarEdad()"></div>
+        </div>
+        <div class="form-grid-4">
+            <div><label>Género <span>*</span></label><select id="genero">
+                <option value="">Selecciona...</option>
+                <option value="MASCULINO">Masculino</option>
+                <option value="FEMENINO">Femenino</option>
+                <option value="NO ESPECIFICAR">No especificar</option>
+            </select></div>
+            <div><label>Celular <span>*</span></label><input id="celular" placeholder="Ej: 300 123 4567"></div>
+            <div><label>EPS <span>*</span></label><input id="eps" placeholder="Ej: Sura, Compensar"></div>
+            <div><label>Plan <span>*</span></label><select id="plan" onchange="actualizarAcompanante()"><option value="">Cargando planes...</option></select></div>
+        </div>
+        <div id="acompananteSection" class="hidden">
+          <div class="form-grid-3" style="margin-top:12px">
+            <div><label>Nombre acompañante <span>*</span></label><input id="acompanante_nombre" placeholder="Ej: Ana Gómez"></div>
+            <div><label>Cédula acompañante <span>*</span></label><input id="acompanante_cedula" placeholder="Ej: 1098765432"></div>
+            <div><label>Celular acompañante <span>*</span></label><input id="acompanante_celular" placeholder="Ej: 311 987 6543"></div>
+          </div>
+          <div class="form-grid-3" style="margin-top:12px">
+            <div><label>EPS acompañante <span>*</span></label><input id="acompanante_eps" placeholder="Ej: Sura"></div>
+          </div>
+        </div>
+        <div class="form-grid-3">
+            <div><label>Edad</label><input id="edad" readonly placeholder="Se calcula automáticamente"></div>
+        </div>
+        <!-- Método de pago -->
+        <div style="margin-bottom:16px">
+            <label style="margin-bottom:8px">Método de pago <span>*</span></label>
+            <div class="metodo-selector">
+                <div class="metodo-btn" id="btn-efectivo" onclick="seleccionarMetodo('EFECTIVO')">💵 Efectivo</div>
+                <div class="metodo-btn" id="btn-transferencia" onclick="seleccionarMetodo('TRANSFERENCIA')">🏦 Transferencia</div>
+            </div>
+            <input type="hidden" id="metodo_pago" value="">
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="registrarCliente()">+ Registrar cliente</button>
+        </div>
+        </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Clientes registrados</h2>
+            <button class="tabla-toggle-btn" id="tablaToggle" onclick="toggleTabla()" title="Expandir/contraer tabla">▼</button>
+        </div>
+        <div id="tablaContainer" class="tabla-container" style="overflow-x:auto">
+            <div class="search-bar">
+                <input id="clienteSearch" class="search-input" type="search" placeholder="Buscar cliente por nombre, cédula o plan..." oninput="filtrarClientes()">
+            </div>
+            <table>
+                <thead>
+                <tr>
+                    <th>Nombre</th><th>Cédula</th><th>Celular</th><th>Créditos</th><th>Estado</th><th>Editar</th><th>Info</th>
+                </tr>
+                </thead>
+                <tbody id="tabla"><tr><td colspan="7" class="empty">Cargando...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL EDICIÓN -->
+<div class="modal-overlay" id="modalOverlay" onclick="cerrarModalSiOverlay(event)">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>✏️ Editar cliente</h3>
+            <button class="modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="modal-content">
+            <input type="hidden" id="editId">
+
+            <div class="modal-section">Información del registro</div>
+            <div class="modal-grid-3">
+                <div><label>ID</label><input id="editRegistroId" readonly></div>
+                <div><label>Plan actual</label><input id="editPlanNombre" readonly></div>
+                <div><label>Creado en</label><input id="editCreatedAt" readonly></div>
+            </div>
+            <div class="modal-grid-3" style="margin-top:12px">
+                <div><label>ID plan</label><input id="editPlanId" readonly></div>
+                <div><label>Valor plan</label><input id="editPlanValor" readonly></div>
+                <div><label>Última act. créditos</label><input id="editFechaCreditosActualizados" readonly></div>
+            </div>
+            <div class="modal-grid-3" style="margin-top:12px">
+                <div><label>Fecha inactivo</label><input id="editFechaInactivo" readonly></div>
+            </div>
+
+            <div class="modal-section">Datos personales</div>
+            <div class="modal-grid-3">
+                <div><label>Nombre <span style="color:#c9952a">*</span></label><input id="editNombre"></div>
+                <div><label>Cédula <span style="color:#c9952a">*</span></label><input id="editCedula" type="number"></div>
+                <div><label>F. Nacimiento <span style="color:#c9952a">*</span></label><input id="editFechaNac" type="date"></div>
+            </div>
+            <div class="modal-grid-3" style="margin-top:12px">
+                <div><label>Género <span style="color:#c9952a">*</span></label><select id="editGenero">
+                    <option value="">Selecciona...</option>
+                    <option value="MASCULINO">Masculino</option>
+                    <option value="FEMENINO">Femenino</option>
+                    <option value="NO ESPECIFICAR">No especificar</option>
+                </select></div>
+                <div><label>Celular <span style="color:#c9952a">*</span></label><input id="editCelular"></div>
+                <div><label>EPS <span style="color:#c9952a">*</span></label><input id="editEps"></div>
+            </div>
+            <div id="editAcompananteSection" class="hidden" style="margin-top:16px">
+              <div class="modal-section">Acompañante</div>
+              <div class="modal-grid-3" style="margin-top:12px">
+                <div><label>Nombre acompañante <span style="color:#c9952a">*</span></label><input id="editAcompananteNombre"></div>
+                <div><label>Cédula acompañante <span style="color:#c9952a">*</span></label><input id="editAcompananteCedula"></div>
+                <div><label>Celular acompañante <span style="color:#c9952a">*</span></label><input id="editAcompananteCelular"></div>
+              </div>
+              <div class="modal-grid-3" style="margin-top:12px">
+                <div><label>EPS acompañante <span style="color:#c9952a">*</span></label><input id="editAcompananteEps"></div>
+              </div>
+            </div>
+
+            <div class="modal-section" style="margin-top:20px">Membresía y estado</div>
+            <div class="modal-grid-3">
+                <div><label>F. Inscripción <span style="color:#c9952a">*</span></label><input id="editFechaInicio" type="date"></div>
+                <div><label>F. Vencimiento <span style="color:#c9952a">*</span></label><input id="editFechaFin" type="date"></div>
+                <div>
+                    <label>Estado</label>
+                    <select id="editEstado">
+                        <option value="ACTIVO">Activo</option>
+                        <option value="INACTIVO">Inactivo</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-grid-3" style="margin-top:12px">
+                <div><label>Créditos usados</label><input id="editCreditosUsados" type="number" min="0" oninput="actualizarCreditosRestantes()"></div>
+                <div><label>Créditos del plan</label><input id="editPlanCreditos" readonly></div>
+                <div><label>Restantes</label><input id="editCreditosRestantes" readonly></div>
+            </div>
+
+            <div class="modal-section" style="margin-top:20px">Método de pago registrado</div>
+            <div style="margin-bottom:12px"><label>Método actual</label><input id="editMetodoActual" readonly></div>
+            <div class="metodo-selector">
+                <div class="metodo-btn" id="edit-btn-efectivo"      onclick="seleccionarMetodoEdit('EFECTIVO')">💵 Efectivo</div>
+                <div class="metodo-btn" id="edit-btn-transferencia" onclick="seleccionarMetodoEdit('TRANSFERENCIA')">🏦 Transferencia</div>
+            </div>
+            <input type="hidden" id="editMetodoPago" value="">
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="cerrarModal()">Cancelar</button>
+            <button class="btn btn-save"   onclick="guardarEdicion()">💾 Guardar cambios</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL INFO -->
+<div class="modal-overlay" id="infoModalOverlay" onclick="cerrarInfoSiOverlay(event)">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="infoModalTitle">Información del cliente</h3>
+            <button class="modal-close" onclick="cerrarInfo()">✕</button>
+        </div>
+        <div class="modal-content" id="infoModalContent"></div>
+        <div class="modal-footer">
+            <button class="btn btn-cancel" onclick="cerrarInfo()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API = 'api';
+    let metodoPagoSeleccionado = '';
+    let metodoPagoEditSeleccionado = '';
+    let metodoPagoClaseSeleccionado = '';
+    let planClaseUnica = null;
+    let alertasCerradas = false;
+    let clientesData = [];
+    let ingresosMap = {};
+
+    /* ── TOAST ── */
+    function toast(msg, tipo = 'ok') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast ${tipo} show`;
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    /* ── VALIDACIÓN ── */
+    function validar(ids) {
+      let ok = true;
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el || !el.value.trim()) { el && el.classList.add('error'); ok = false; }
+        else el.classList.remove('error');
+      });
+      return ok;
+    }
+
+    /* ── EDAD ── */
+    function calcularEdad(fecha) {
+      if (!fecha) return '';
+      const hoy = new Date();
+      const nacimiento = new Date(fecha);
+      if (isNaN(nacimiento)) return '';
+      let edad = hoy.getFullYear() - nacimiento.getFullYear();
+      const mesDiff = hoy.getMonth() - nacimiento.getMonth();
+      if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < nacimiento.getDate())) {
+        edad -= 1;
+      }
+      return edad >= 0 ? edad : '';
+    }
+
+    function actualizarEdad() {
+      document.getElementById('edad').value = calcularEdad(document.getElementById('fecha_nacimiento').value);
+    }
+
+    function diasRestantes(fechaFin) {
+      if (!fechaFin) return '—';
+      const hoy = new Date();
+      const fin = new Date(fechaFin);
+      if (isNaN(fin)) return '—';
+      const msPorDia = 1000 * 60 * 60 * 24;
+      const diff = Math.ceil((fin - new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())) / msPorDia);
+      if (diff < 0) return 'Expirado';
+      return diff === 0 ? 'Hoy' : `${diff} día${diff === 1 ? '' : 's'}`;
+    }
+
+    /* ── SELECTOR MÉTODO PAGO (REGISTRO) ── */
+    function seleccionarMetodo(metodo) {
+      metodoPagoSeleccionado = metodo;
+      document.getElementById('metodo_pago').value = metodo;
+      document.getElementById('btn-efectivo').className      = 'metodo-btn' + (metodo === 'EFECTIVO'      ? ' selected-efectivo' : '');
+      document.getElementById('btn-transferencia').className = 'metodo-btn' + (metodo === 'TRANSFERENCIA' ? ' selected-transferencia' : '');
+    }
+
+    /* ── SELECTOR MÉTODO PAGO (EDICIÓN) ── */
+    function seleccionarMetodoEdit(metodo) {
+      metodoPagoEditSeleccionado = metodo;
+      document.getElementById('editMetodoPago').value = metodo;
+      document.getElementById('edit-btn-efectivo').className      = 'metodo-btn' + (metodo === 'EFECTIVO'      ? ' selected-efectivo' : '');
+      document.getElementById('edit-btn-transferencia').className = 'metodo-btn' + (metodo === 'TRANSFERENCIA' ? ' selected-transferencia' : '');
+    }
+
+    /* ── PLANES ── */
+    function seleccionarMetodoClase(metodo) {
+      metodoPagoClaseSeleccionado = metodo;
+      document.getElementById('clase_metodo_pago').value = metodo;
+      document.getElementById('btn-clase-efectivo').className = 'metodo-btn' + (metodo === 'EFECTIVO' ? ' selected-efectivo' : '');
+      document.getElementById('btn-clase-transferencia').className = 'metodo-btn' + (metodo === 'TRANSFERENCIA' ? ' selected-transferencia' : '');
+    }
+
+    function normalizarTexto(texto) {
+      return String(texto || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toUpperCase();
+    }
+
+    function esPlanClaseUnica(plan) {
+      const nombre = normalizarTexto(plan?.nombre);
+      return (nombre.includes('CLASE UNICA') && nombre.includes('1 DIA'))
+        || nombre.includes('1 SOLA CLASE')
+        || nombre.includes('UNA SOLA CLASE')
+        || nombre.includes('1 CLASE')
+        || nombre.includes('CLASE SUELTA');
+    }
+
+    function actualizarInfoClaseUnica() {
+      const info = document.getElementById('claseUnicaInfo');
+      if (!info) return;
+      info.textContent = planClaseUnica
+        ? `Valor: $${Number(planClaseUnica.valor || 0).toLocaleString('es-CO')} - ${planClaseUnica.nombre}`
+        : 'No se encontró un plan de una sola clase activo.';
+    }
+
+    async function cargarPlanes() {
+      try {
+        const data = await (await fetch(`${API}/planes.php`)).json();
+        const sel  = document.getElementById('plan');
+        sel.innerHTML = '<option value="">Selecciona un plan...</option>';
+        planClaseUnica = data.find(esPlanClaseUnica) || null;
+        actualizarInfoClaseUnica();
+        
+        // Deduplicar por nombre normalizado
+        const seenNames = new Set();
+        const deduplicatedPlanes = [];
+        for (const p of data) {
+          const normalizedName = p.nombre.trim().toUpperCase();
+          const key = normalizedName.includes('PAREJA') ? 'PAREJA' : normalizedName;
+          if (!seenNames.has(key)) {
+            seenNames.add(key);
+            deduplicatedPlanes.push(p);
+          }
+        }
+        
+        deduplicatedPlanes.filter(p => !esPlanClaseUnica(p)).forEach(p => {
+          const pareja = p.nombre.trim().toUpperCase().includes('PAREJA') ? ' data-pareja="1"' : '';
+          sel.innerHTML += `<option value="${p.id}"${pareja}>${p.nombre} — $${Number(p.valor).toLocaleString('es-CO')}</option>`;
+        });
+        actualizarAcompanante();
+      } catch(e) { actualizarInfoClaseUnica(); }
+    }
+
+    function esPlanPareja() {
+      const plan = document.getElementById('plan');
+      const selected = plan.selectedOptions[0];
+      return selected && selected.dataset.pareja === '1';
+    }
+
+    function actualizarAcompanante() {
+      const visible = esPlanPareja();
+      const section = document.getElementById('acompananteSection');
+      section.style.display = visible ? 'block' : 'none';
+      if (!visible) {
+        ['acompanante_nombre','acompanante_cedula','acompanante_celular','acompanante_eps'].forEach(id => document.getElementById(id).value = '');
+      }
+    }
+
+    /* ── CLIENTES ── */
+    async function cargarClientes() {
+      try {
+        const data  = await (await fetch(`${API}/clientes.php`)).json();
+        const tbody = document.getElementById('tabla');
+        clientesData = data.sort((a, b) => a.id - b.id);
+        // Para cada cliente buscar su último método de pago
+        const ingresos = await (await fetch(`${API}/ingresos.php?todos=1`)).json();
+        ingresosMap = {};
+        ingresos.forEach(i => {
+          if (i.id_cliente && !ingresosMap[i.id_cliente]) ingresosMap[i.id_cliente] = i.metodo_pago;
+        });
+
+        renderClientes(clientesData);
+      } catch(e) { console.error(e); }
+    }
+
+    function renderClientes(data) {
+      const tbody = document.getElementById('tabla');
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty">Sin clientes registrados aún</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(c => {
+          const metodo = ingresosMap[c.id] || '—';
+          const edadCliente = calcularEdad(c.fecha_nacimiento);
+          const parejaVisible = c.plan_nombre && c.plan_nombre.trim().toUpperCase().includes('PAREJA');
+          const faltantes = c.plan_creditos_mes && c.plan_creditos_mes > 0 ? Math.max(Number(c.plan_creditos_mes) - Number(c.creditos_usados || 0), 0) : null;
+          const rowClass = faltantes !== null && faltantes < 5 ? ' class="fila-creditos-bajos"' : '';
+          const creditosTexto = c.plan_creditos_mes && c.plan_creditos_mes > 0
+            ? `${Number(c.creditos_usados || 0)}/${Number(c.plan_creditos_mes)}<div style="font-size:11px;color:#aaa">${faltantes} restantes</div>`
+            : '—';
+          return `
+            <tr${rowClass}>
+              <td><strong>${c.nombre}</strong></td>
+              <td>${c.cedula || '—'}</td>
+              <td>${c.celular || '—'}</td>
+              <td>${creditosTexto}</td>
+              <td><span class="badge badge-${(c.estado||'').toLowerCase()}">${c.estado}</span></td>
+              <td>
+                <button class="btn btn-edit" onclick='abrirModal(${JSON.stringify(c)}, "${metodo}")'>✏️ Editar</button>
+                <button class="btn" style="background:#0d2a1a;color:#4ade80;border:1px solid #166634;margin-left:4px" onclick="abrirModalRenovar(${c.id})">🔄 Renovar</button>
+                ${c.estado === 'ACTIVO'
+                  ? `<button class="btn" style="background:#1a0d0d;color:#f87171;border:1px solid #7a1a1a;margin-left:4px" onclick="confirmarCambioEstado(${c.id},'INACTIVO')">⏸ Pausar</button>`
+                  : `<button class="btn" style="background:#0d1a0d;color:#4ade80;border:1px solid #166634;margin-left:4px" onclick="confirmarCambioEstado(${c.id},'ACTIVO')">▶ Activar</button>`
+                }
+              </td>
+              <td><button class="detalle-toggle info" onclick="abrirInfo(${c.id})">Info</button></td>
+            </tr>`;
+        }).join('');
+    }
+
+    function filtrarClientes() {
+      const texto = document.getElementById('clienteSearch').value.trim().toLowerCase();
+      const filtrados = texto === '' ? clientesData : clientesData.filter(c => {
+        const plan = c.plan_nombre || '';
+        const metodo = ingresosMap[c.id] || '';
+        return [c.nombre, c.cedula, plan, c.estado, c.genero, metodo]
+          .some(valor => String(valor || '').toLowerCase().includes(texto));
+      });
+      renderClientes(filtrados);
+    }
+
+    /* ── REGISTRAR ── */
+    async function registrarCliente() {
+      if (!validar(['nombre','cedula','fecha_nacimiento','genero','celular','eps','plan'])) {
+        toast('Completa todos los campos obligatorios', 'err'); return;
+      }
+      if (!metodoPagoSeleccionado) {
+        toast('Selecciona un método de pago', 'err'); return;
+      }
+      if (esPlanPareja() && !validar(['acompanante_nombre','acompanante_cedula','acompanante_celular','acompanante_eps'])) {
+        toast('Completa los datos del acompañante para el plan Pareja', 'err'); return;
+      }
+      try {
+        const payload = {
+            nombre:           document.getElementById('nombre').value.trim(),
+            cedula:           document.getElementById('cedula').value.trim(),
+            fecha_nacimiento: document.getElementById('fecha_nacimiento').value,
+            genero:           document.getElementById('genero').value,
+            edad:             calcularEdad(document.getElementById('fecha_nacimiento').value),
+            celular:          document.getElementById('celular').value.trim(),
+            eps:              document.getElementById('eps').value.trim(),
+            id_plan:          document.getElementById('plan').value,
+            metodo_pago:      metodoPagoSeleccionado,
+        };
+        if (esPlanPareja()) {
+          payload.acompanante_nombre = document.getElementById('acompanante_nombre').value.trim();
+          payload.acompanante_cedula = document.getElementById('acompanante_cedula').value.trim();
+          payload.acompanante_celular = document.getElementById('acompanante_celular').value.trim();
+          payload.acompanante_eps = document.getElementById('acompanante_eps').value.trim();
+        }
+        const res = await fetch(`${API}/clientes.php`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          ['nombre','cedula','fecha_nacimiento','genero','celular','eps','acompanante_nombre','acompanante_cedula','acompanante_celular','acompanante_eps'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+          });
+          document.getElementById('edad').value = '';
+          document.getElementById('plan').value = '';
+          actualizarAcompanante();
+          seleccionarMetodo(''); // limpiar selección
+          document.getElementById('btn-efectivo').className = 'metodo-btn';
+          document.getElementById('btn-transferencia').className = 'metodo-btn';
+          metodoPagoSeleccionado = '';
+          const registro = data.solo_ingreso ? 'Ingreso registrado' : 'Cliente registrado';
+          toast(`✓ ${registro} — $${Number(data.monto_ingreso).toLocaleString('es-CO')} via ${data.metodo_pago}`);
+          cargarClientes();
+          cargarAlertas();
+        } else {
+          const err = await res.json();
+          toast('Error: ' + err.error, 'err');
+        }
+      } catch(e) { toast('Abre desde http://localhost/anubisbox/', 'err'); }
+    }
+
+    /* ── MODAL ── */
+    async function registrarClaseUnica() {
+      if (!validar(['clase_nombre','clase_cedula','clase_eps','clase_numero'])) {
+        toast('Completa todos los datos de la clase', 'err'); return;
+      }
+      if (!metodoPagoClaseSeleccionado) {
+        toast('Selecciona un método de pago para la clase', 'err'); return;
+      }
+      if (!planClaseUnica) {
+        toast('No se encontró el plan de una sola clase', 'err'); return;
+      }
+
+      const nombre = document.getElementById('clase_nombre').value.trim();
+      const cedula = document.getElementById('clase_cedula').value.trim();
+      const eps = document.getElementById('clase_eps').value.trim();
+      const numero = document.getElementById('clase_numero').value.trim();
+      const hoy = new Date().toISOString().split('T')[0];
+      const payload = {
+        concepto: `Clase unica - ${nombre} - CC ${cedula} - EPS ${eps} - Numero ${numero}`,
+        monto: Number(planClaseUnica.valor || 0),
+        fecha: hoy,
+        metodo_pago: metodoPagoClaseSeleccionado
+      };
+
+      try {
+        const res = await fetch(`${API}/ingresos.php`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          ['clase_nombre','clase_cedula','clase_eps','clase_numero'].forEach(id => document.getElementById(id).value = '');
+          seleccionarMetodoClase('');
+          toast(`✓ Ingreso registrado — $${Number(payload.monto).toLocaleString('es-CO')} via ${payload.metodo_pago}`);
+        } else {
+          const err = await res.json();
+          toast('Error: ' + (err.error || 'No se pudo registrar el ingreso'), 'err');
+        }
+      } catch(e) { toast('No se pudo conectar', 'err'); }
+    }
+
+    function abrirModal(c, metodo) {
+      document.getElementById('editId').value          = c.id;
+      document.getElementById('editRegistroId').value  = c.id || '';
+      document.getElementById('editPlanNombre').value  = c.plan_nombre || '—';
+      document.getElementById('editCreatedAt').value   = c.created_at || '—';
+      document.getElementById('editPlanId').value      = c.id_plan || '—';
+      document.getElementById('editPlanValor').value   = c.plan_valor ? '$' + Number(c.plan_valor).toLocaleString('es-CO') : '—';
+      document.getElementById('editFechaCreditosActualizados').value = c.fecha_creditos_actualizados || '—';
+      document.getElementById('editFechaInactivo').value = c.fecha_inactivo || '—';
+      document.getElementById('editNombre').value      = c.nombre            || '';
+      document.getElementById('editCedula').value      = c.cedula            || '';
+      document.getElementById('editFechaNac').value    = c.fecha_nacimiento  || '';
+      document.getElementById('editGenero').value      = c.genero            || 'NO ESPECIFICAR';
+      document.getElementById('editCelular').value     = c.celular           || '';
+      document.getElementById('editEps').value         = c.eps               || '';
+      document.getElementById('editFechaInicio').value = c.fecha_inicio      || '';
+      document.getElementById('editFechaFin').value    = c.fecha_fin         || '';
+      const estadoSelect = c.estado === 'SUSPENDIDO' ? 'INACTIVO' : (c.estado || 'ACTIVO');
+      document.getElementById('editEstado').value      = estadoSelect;
+      document.getElementById('editCreditosUsados').value = c.creditos_usados || 0;
+      document.getElementById('editPlanCreditos').value  = c.plan_creditos_mes || 0;
+      actualizarCreditosRestantes();
+      const esPareja = c.plan_nombre && c.plan_nombre.trim().toUpperCase().includes('PAREJA');
+      const editAcomp = document.getElementById('editAcompananteSection');
+      editAcomp.classList.toggle('hidden', !esPareja);
+      if (esPareja) {
+        document.getElementById('editAcompananteNombre').value  = c.acompanante_nombre || '';
+        document.getElementById('editAcompananteCedula').value  = c.acompanante_cedula || '';
+        document.getElementById('editAcompananteCelular').value = c.acompanante_celular || '';
+        document.getElementById('editAcompananteEps').value     = c.acompanante_eps || '';
+      } else {
+        ['editAcompananteNombre','editAcompananteCedula','editAcompananteCelular','editAcompananteEps'].forEach(id => document.getElementById(id).value = '');
+      }
+      // Precargar método de pago
+      const m = (metodo && metodo !== '—') ? metodo : 'EFECTIVO';
+      document.getElementById('editMetodoActual').value = m;
+      seleccionarMetodoEdit(m);
+      document.getElementById('modalOverlay').classList.add('show');
+    }
+
+    function cerrarModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+    function cerrarModalSiOverlay(e) { if (e.target === document.getElementById('modalOverlay')) cerrarModal(); }
+
+    function valorInfo(valor) {
+      return valor !== undefined && valor !== null && String(valor).trim() !== '' ? valor : '—';
+    }
+
+    function infoItem(label, valor) {
+      return `<div class="info-item"><strong>${label}</strong><span>${valorInfo(valor)}</span></div>`;
+    }
+
+    function abrirInfo(id) {
+      const c = clientesData.find(cliente => Number(cliente.id) === Number(id));
+      if (!c) return;
+      const metodo = ingresosMap[c.id] || '—';
+      const edadCliente = calcularEdad(c.fecha_nacimiento);
+      const limite = Number(c.plan_creditos_mes || 0);
+      const usados = Number(c.creditos_usados || 0);
+      const restantes = limite > 0 ? Math.max(limite - usados, 0) : '—';
+      const esPareja = c.plan_nombre && c.plan_nombre.trim().toUpperCase().includes('PAREJA');
+
+      document.getElementById('infoModalTitle').textContent = `Información - ${c.nombre || 'Cliente'}`;
+      document.getElementById('infoModalContent').innerHTML = `
+        <div class="modal-section">Datos personales</div>
+        <div class="info-grid">
+          ${infoItem('ID', c.id)}
+          ${infoItem('Nombre', c.nombre)}
+          ${infoItem('Cédula', c.cedula)}
+          ${infoItem('Fecha de nacimiento', c.fecha_nacimiento)}
+          ${infoItem('Edad', edadCliente !== '' ? edadCliente : '—')}
+          ${infoItem('Género', c.genero)}
+          ${infoItem('Celular', c.celular)}
+          ${infoItem('EPS', c.eps)}
+        </div>
+
+        <div class="modal-section">Membresía y pago</div>
+        <div class="info-grid">
+          ${infoItem('Plan', c.plan_nombre)}
+          ${infoItem('Valor del plan', c.plan_valor ? '$' + Number(c.plan_valor).toLocaleString('es-CO') : '—')}
+          ${infoItem('Créditos usados', usados)}
+          ${infoItem('Créditos del plan', limite || '—')}
+          ${infoItem('Créditos restantes', restantes)}
+          ${infoItem('Fecha de inscripción', c.fecha_inicio)}
+          ${infoItem('Fecha de vencimiento', c.fecha_fin)}
+          ${infoItem('Estado', c.estado)}
+          ${infoItem('Método de pago', metodo)}
+          ${infoItem('Creado en', c.created_at)}
+          ${infoItem('Última actualización de créditos', c.fecha_creditos_actualizados)}
+          ${infoItem('Fecha inactivo', c.fecha_inactivo)}
+        </div>
+
+        ${esPareja ? `
+          <div class="modal-section">Acompañante</div>
+          <div class="info-grid">
+            ${infoItem('Nombre acompañante', c.acompanante_nombre)}
+            ${infoItem('Cédula acompañante', c.acompanante_cedula)}
+            ${infoItem('Celular acompañante', c.acompanante_celular)}
+            ${infoItem('EPS acompañante', c.acompanante_eps)}
+          </div>
+        ` : ''}
+      `;
+      document.getElementById('infoModalOverlay').classList.add('show');
+    }
+
+    function cerrarInfo() { document.getElementById('infoModalOverlay').classList.remove('show'); }
+    function cerrarInfoSiOverlay(e) { if (e.target === document.getElementById('infoModalOverlay')) cerrarInfo(); }
+
+    function actualizarCreditosRestantes() {
+      const usados = Number(document.getElementById('editCreditosUsados').value || 0);
+      const limite = Number(document.getElementById('editPlanCreditos').value || 0);
+      const restantes = limite > 0 ? Math.max(limite - usados, 0) : 0;
+      document.getElementById('editCreditosRestantes').value = limite > 0 ? restantes : '—';
+    }
+
+    async function actualizarCreditosAutomaticos() {
+      try {
+        const res = await fetch(`${API}/actualizar_creditos.php`);
+        if (!res.ok) return;
+        await res.json();
+      } catch (e) {
+        console.warn('No se pudo actualizar créditos automáticamente', e);
+      }
+    }
+
+    async function guardarEdicion() {
+      if (!validar(['editNombre','editCedula','editFechaNac','editGenero','editCelular','editEps','editFechaInicio','editFechaFin'])) {
+        toast('Completa todos los campos obligatorios', 'err'); return;
+      }
+      const fi = document.getElementById('editFechaInicio').value;
+      const ff = document.getElementById('editFechaFin').value;
+      if (fi > ff) {
+        toast('La fecha de inscripción no puede ser mayor que la de vencimiento', 'err');
+        document.getElementById('editFechaInicio').classList.add('error');
+        document.getElementById('editFechaFin').classList.add('error');
+        return;
+      }
+      const id = document.getElementById('editId').value;
+      try {
+        const creditosUsados = Number(document.getElementById('editCreditosUsados').value || 0);
+        const planCreditos = Number(document.getElementById('editPlanCreditos').value || 0);
+        if (creditosUsados < 0) {
+          toast('Los créditos usados no pueden ser negativos', 'err'); return;
+        }
+        if (planCreditos > 0 && creditosUsados > planCreditos) {
+          toast('No puedes usar más créditos de los permitidos por el plan', 'err'); return;
+        }
+        const payload = {
+            nombre:           document.getElementById('editNombre').value.trim(),
+            cedula:           document.getElementById('editCedula').value.trim(),
+            fecha_nacimiento: document.getElementById('editFechaNac').value,
+            genero:           document.getElementById('editGenero').value,
+            celular:          document.getElementById('editCelular').value.trim(),
+            eps:              document.getElementById('editEps').value.trim(),
+            estado:           document.getElementById('editEstado').value,
+            fecha_inicio:     fi,
+            fecha_fin:        ff,
+            metodo_pago:      document.getElementById('editMetodoPago').value,
+            creditos_usados:  creditosUsados,
+        };
+        if (!document.getElementById('editAcompananteSection').classList.contains('hidden')) {
+          if (!validar(['editAcompananteNombre','editAcompananteCedula','editAcompananteCelular','editAcompananteEps'])) {
+            toast('Completa los datos del acompañante para el plan Pareja', 'err'); return;
+          }
+          payload.acompanante_nombre = document.getElementById('editAcompananteNombre').value.trim();
+          payload.acompanante_cedula = document.getElementById('editAcompananteCedula').value.trim();
+          payload.acompanante_celular = document.getElementById('editAcompananteCelular').value.trim();
+          payload.acompanante_eps = document.getElementById('editAcompananteEps').value.trim();
+        }
+        const res = await fetch(`${API}/clientes.php?id=${id}`, {
+          method: 'PUT',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          cerrarModal();
+          toast('✓ Cliente actualizado — historial de pago actualizado');
+          cargarClientes();
+          cargarAlertas();
+        } else { toast('Error al actualizar', 'err'); }
+      } catch(e) { toast('No se pudo conectar', 'err'); }
+    }
+
+    /* ── ALERTAS ── */
+    function cerrarAlertas() {
+      alertasCerradas = true;
+      document.getElementById('alertas').innerHTML = '';
+    }
+
+    async function cargarAlertas() {
+      try {
+        if (alertasCerradas) return;
+        const data = await (await fetch(`${API}/clientes.php?creditos_faltantes=5`)).json();
+        const alertas = data
+          .map(c => ({
+            ...c,
+            creditosRestantes: Math.max(Number(c.plan_creditos_mes || 0) - Number(c.creditos_usados || 0), 0)
+          }))
+          .sort((a, b) => a.creditosRestantes - b.creditosRestantes);
+
+        document.getElementById('alertas').innerHTML = alertas.length
+          ? `<div class="alerta alerta-creditos alerta-header"><span>⚠ <strong>${alertas.length} cliente(s)</strong> con menos de 5 créditos</span><button class="alerta-close" onclick="cerrarAlertas()" title="Cerrar notificación">×</button></div>` +
+            `<div class="alerta-creditos creditos-alert-list">` +
+            alertas.map(c => {
+              const clase = c.creditosRestantes === 0 ? 'credito-chip agotado' : 'credito-chip';
+              const texto = c.creditosRestantes === 1 ? 'crédito' : 'créditos';
+              return `<span class="${clase}">${c.nombre}: <strong>${c.creditosRestantes}</strong> ${texto}</span>`;
+            }).join('') +
+            `</div>`
+          : '';
+      } catch(e) { console.warn('Error cargando alertas', e); }
+    }
+
+    /* ── TABLA RETRACTABLE ── */
+    function toggleRegistroClientes() {
+      const container = document.getElementById('registroClientesContainer');
+      const btn = document.getElementById('registroToggle');
+      const isCollapsed = container.classList.contains('collapsed');
+
+      if (isCollapsed) {
+        container.classList.remove('collapsed');
+        btn.classList.remove('collapsed');
+        localStorage.setItem('registroClientesState', 'expanded');
+      } else {
+        container.classList.add('collapsed');
+        btn.classList.add('collapsed');
+        localStorage.setItem('registroClientesState', 'collapsed');
+      }
+    }
+
+    function restaurarEstadoRegistroClientes() {
+      const estado = localStorage.getItem('registroClientesState') || 'expanded';
+      const container = document.getElementById('registroClientesContainer');
+      const btn = document.getElementById('registroToggle');
+      if (estado === 'collapsed') {
+        container.classList.add('collapsed');
+        btn.classList.add('collapsed');
+      }
+    }
+
+    function toggleClaseUnica() {
+      const container = document.getElementById('claseUnicaContainer');
+      const btn = document.getElementById('claseToggle');
+      const isCollapsed = container.classList.contains('collapsed');
+
+      if (isCollapsed) {
+        container.classList.remove('collapsed');
+        btn.classList.remove('collapsed');
+        localStorage.setItem('claseUnicaState', 'expanded');
+      } else {
+        container.classList.add('collapsed');
+        btn.classList.add('collapsed');
+        localStorage.setItem('claseUnicaState', 'collapsed');
+      }
+    }
+
+    function restaurarEstadoClaseUnica() {
+      const estado = localStorage.getItem('claseUnicaState') || 'expanded';
+      const container = document.getElementById('claseUnicaContainer');
+      const btn = document.getElementById('claseToggle');
+      if (estado === 'collapsed') {
+        container.classList.add('collapsed');
+        btn.classList.add('collapsed');
+      }
+    }
+
+    function toggleTabla() {
+      const container = document.getElementById('tablaContainer');
+      const btn = document.getElementById('tablaToggle');
+      const isCollapsed = container.classList.contains('collapsed');
+      
+      if (isCollapsed) {
+        container.classList.remove('collapsed');
+        btn.classList.remove('collapsed');
+        localStorage.setItem('tablaState', 'expanded');
+      } else {
+        container.classList.add('collapsed');
+        btn.classList.add('collapsed');
+        localStorage.setItem('tablaState', 'collapsed');
+      }
+    }
+
+    // Restaurar estado de la tabla al cargar la página
+    function restaurarEstadoTabla() {
+      const estado = localStorage.getItem('tablaState') || 'expanded';
+      const container = document.getElementById('tablaContainer');
+      const btn = document.getElementById('tablaToggle');
+      if (estado === 'collapsed') {
+        container.classList.add('collapsed');
+        btn.classList.add('collapsed');
+      }
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarModal(); cerrarInfo(); closeSidebar(); } });
+
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      const btn = document.getElementById('menuToggle');
+      const opened = sb.classList.toggle('open');
+      ov.classList.toggle('show', opened);
+      btn.classList.toggle('open', opened);
+    }
+    function closeSidebar() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      const btn = document.getElementById('menuToggle');
+      sb.classList.remove('open');
+      ov.classList.remove('show');
+      btn && btn.classList.remove('open');
+    }
+    // Cerrar sidebar al hacer click en un enlace del mismo
+    document.addEventListener('DOMContentLoaded', () => {
+      const sb = document.getElementById('sidebar');
+      if (sb) sb.querySelectorAll('a').forEach(a=>a.addEventListener('click', closeSidebar));
+    });
+
+    cargarPlanes();
+    actualizarCreditosAutomaticos().finally(() => {
+      cargarClientes();
+      cargarAlertas();
+    });
+    restaurarEstadoTabla();
+    restaurarEstadoRegistroClientes();
+    restaurarEstadoClaseUnica();
+
+    /* ══ RENOVAR PLAN ══ */
+    let renovarClienteActual         = null;
+    let renovarPlanSeleccionado      = null;
+    let metodoPagoRenovarSeleccionado = '';
+    let planesActivosCache           = [];
+
+    async function abrirModalRenovar(idCliente) {
+      // Buscar cliente en el array global (igual que abrirInfo)
+      const cliente = clientesData.find(c => c.id == idCliente);
+      if (!cliente) { toast('Cliente no encontrado', 'err'); return; }
+      renovarClienteActual          = cliente;
+      renovarPlanSeleccionado       = null;
+      metodoPagoRenovarSeleccionado = '';
+
+      // ── Info del cliente ──
+      document.getElementById('rciNombre').textContent     = cliente.nombre;
+      document.getElementById('rciPlanActual').textContent = cliente.plan_nombre || '—';
+      document.getElementById('rciVence').textContent      = cliente.fecha_fin   || '—';
+
+      // Estado con color
+      const estadoEl = document.getElementById('rciEstado');
+      estadoEl.textContent = cliente.estado || '—';
+      estadoEl.style.color = cliente.estado === 'ACTIVO' ? '#4ade80' : '#f87171';
+
+      // ── Fecha inicio: hoy si ya venció, o día siguiente al vencimiento ──
+      const hoy = new Date();
+      const fmt = d => d.toISOString().split('T')[0];
+      let fechaInicio = fmt(hoy);
+      if (cliente.fecha_fin) {
+        const vence = new Date(cliente.fecha_fin + 'T00:00:00');
+        if (vence >= hoy) {
+          const sig = new Date(vence);
+          sig.setDate(sig.getDate() + 1);
+          fechaInicio = fmt(sig);
+        }
+      }
+      document.getElementById('renovarFechaInicio').value = fechaInicio;
+      document.getElementById('renovarFechaFin').value    = '';
+
+      // ── Limpiar método de pago ──
+      ['ren-btn-efectivo','ren-btn-transferencia'].forEach(id =>
+        document.getElementById(id).className = 'metodo-btn');
+      document.getElementById('bancoSelectRenovar').style.display = 'none';
+      document.getElementById('renovarBanco').value               = '';
+
+      // ── Limpiar previews ──
+      document.getElementById('renovarMontoPreview').textContent   = '$0';
+      document.getElementById('renovarConceptoPreview').textContent = 'Selecciona un plan';
+      document.getElementById('rciCreditos').textContent           = '—';
+
+      // ── Cargar planes activos ──
+      try {
+        const data = await (await fetch(`${API}/planes.php`)).json();
+        planesActivosCache = data.filter(p => parseInt(p.activo) === 1);
+        renderPlanOpciones(planesActivosCache, cliente.id_plan);
+      } catch(e) {
+        document.getElementById('planOpciones').innerHTML =
+          '<div style="color:#f87171;font-size:13px;padding:12px">Error cargando planes</div>';
+      }
+
+      document.getElementById('modalRenovarOverlay').classList.add('show');
+    }
+
+    function renderPlanOpciones(planes, idPlanActual) {
+      const cont = document.getElementById('planOpciones');
+      if (!planes.length) {
+        cont.innerHTML = '<div style="color:#444;font-size:13px;padding:12px">Sin planes activos</div>';
+        return;
+      }
+      cont.innerHTML = planes.map(p => {
+        const esMismo = String(p.id) === String(idPlanActual);
+        return `<div class="plan-opcion${esMismo?' mismo-plan':''}" id="po-${p.id}"
+                  onclick="seleccionarPlanRenovar(${p.id})" title="${esMismo?'Plan actual':''}">
+          <div class="po-nombre">${p.nombre}</div>
+          <div class="po-precio">$${Number(p.valor).toLocaleString('es-CO')}</div>
+          <div class="po-dias">${p.duracion_dias} días · ${p.creditos_mes || 0} créditos/mes</div>
+        </div>`;
+      }).join('');
+      // Pre-seleccionar plan actual
+      const actual = planes.find(p => String(p.id) === String(idPlanActual));
+      if (actual) seleccionarPlanRenovar(actual.id);
+    }
+
+    function seleccionarPlanRenovar(idPlan) {
+      renovarPlanSeleccionado = planesActivosCache.find(
+        p => p.id === idPlan || String(p.id) === String(idPlan)
+      );
+      document.querySelectorAll('.plan-opcion').forEach(el => el.classList.remove('selected'));
+      const el = document.getElementById(`po-${idPlan}`);
+      if (el) el.classList.add('selected');
+
+      // Mostrar créditos del plan
+      const cred = renovarPlanSeleccionado?.creditos_mes || 0;
+      document.getElementById('rciCreditos').textContent =
+        cred > 0 ? `${cred} créditos/mes` : 'Sin límite';
+
+      recalcularFechaFin();
+      actualizarPreviewIngreso();
+    }
+
+    function recalcularFechaFin() {
+      if (!renovarPlanSeleccionado) return;
+      const inicio = document.getElementById('renovarFechaInicio').value;
+      if (!inicio) return;
+      const nombre = (renovarPlanSeleccionado.nombre || '').toUpperCase();
+      const esMensual = nombre.includes('FULL') || nombre.includes('PAREJA');
+      const d = new Date(inicio + 'T00:00:00');
+      if (esMensual) {
+        // Mismo día del mes siguiente: paga el 27 → vence el 27
+        d.setMonth(d.getMonth() + 1);
+      } else {
+        d.setDate(d.getDate() + parseInt(renovarPlanSeleccionado.duracion_dias) - 1);
+      }
+      document.getElementById('renovarFechaFin').value = d.toISOString().split('T')[0];
+      actualizarPreviewIngreso();
+    }
+
+    function actualizarPreviewIngreso() {
+      if (!renovarClienteActual || !renovarPlanSeleccionado) return;
+      const monto = Number(renovarPlanSeleccionado.valor);
+      document.getElementById('renovarMontoPreview').textContent =
+        '$' + monto.toLocaleString('es-CO');
+      // Concepto: solo nombre del cliente + Renovación
+      document.getElementById('renovarConceptoPreview').textContent =
+        `Renovación — ${renovarClienteActual.nombre}`;
+    }
+
+    function seleccionarMetodoRenovar(metodo) {
+      metodoPagoRenovarSeleccionado = metodo;
+      document.getElementById('ren-btn-efectivo').className =
+        'metodo-btn' + (metodo === 'EFECTIVO'      ? ' selected-efectivo'      : '');
+      document.getElementById('ren-btn-transferencia').className =
+        'metodo-btn' + (metodo === 'TRANSFERENCIA' ? ' selected-transferencia' : '');
+      const bancDiv = document.getElementById('bancoSelectRenovar');
+      bancDiv.style.display = metodo === 'TRANSFERENCIA' ? 'block' : 'none';
+      if (metodo !== 'TRANSFERENCIA') document.getElementById('renovarBanco').value = '';
+    }
+
+    async function confirmarRenovar() {
+      if (!renovarPlanSeleccionado) {
+        toast('Selecciona un plan para renovar', 'err'); return;
+      }
+      const fechaInicio = document.getElementById('renovarFechaInicio').value;
+      const fechaFin    = document.getElementById('renovarFechaFin').value;
+      if (!fechaInicio || !fechaFin) {
+        toast('Las fechas son obligatorias', 'err'); return;
+      }
+      if (!metodoPagoRenovarSeleccionado) {
+        toast('Selecciona el método de pago', 'err'); return;
+      }
+      if (metodoPagoRenovarSeleccionado === 'TRANSFERENCIA' &&
+          !document.getElementById('renovarBanco').value) {
+        toast('Selecciona el banco de origen', 'err'); return;
+      }
+
+      const btn = document.getElementById('btnConfirmarRenovar');
+      btn.disabled = true;
+      btn.textContent = 'Procesando...';
+
+      try {
+        const cliente = renovarClienteActual;
+        const plan    = renovarPlanSeleccionado;
+        const banco   = document.getElementById('renovarBanco').value || null;
+
+        // ── 1. Actualizar cliente ──
+        // - Nuevo plan y fechas
+        // - Créditos reiniciados a 0
+        // - Estado forzado a ACTIVO (aunque estuviera inactivo)
+        const payloadCliente = {
+          nombre:           cliente.nombre,
+          cedula:           cliente.cedula,
+          fecha_nacimiento: cliente.fecha_nacimiento,
+          genero:           cliente.genero,
+          celular:          cliente.celular,
+          eps:              cliente.eps,
+          id_plan:          plan.id,
+          fecha_inicio:     fechaInicio,
+          fecha_fin:        fechaFin,
+          estado:           'ACTIVO',
+          creditos_usados:  0,
+          metodo_pago:      metodoPagoRenovarSeleccionado,
+        };
+        if (cliente.acompanante_nombre) {
+          payloadCliente.acompanante_nombre  = cliente.acompanante_nombre;
+          payloadCliente.acompanante_cedula  = cliente.acompanante_cedula;
+          payloadCliente.acompanante_celular = cliente.acompanante_celular;
+          payloadCliente.acompanante_eps     = cliente.acompanante_eps;
+        }
+
+        const resCliente = await fetch(`${API}/clientes.php?id=${cliente.id}`, {
+          method: 'PUT',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payloadCliente)
+        });
+        if (!resCliente.ok) throw new Error('Error actualizando el cliente');
+
+        // ── 2. Registrar ingreso ──
+        // Concepto: solo nombre del cliente + Renovación
+        const payloadIngreso = {
+          concepto:     `Renovación — ${cliente.nombre}`,
+          monto:        parseFloat(plan.valor),
+          fecha:        fechaInicio,
+          metodo_pago:  metodoPagoRenovarSeleccionado,
+          banco_origen: metodoPagoRenovarSeleccionado === 'TRANSFERENCIA' ? banco : null,
+          id_cliente:   cliente.id,
+        };
+
+        const resIngreso = await fetch(`${API}/ingresos.php`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payloadIngreso)
+        });
+        if (!resIngreso.ok) throw new Error('Error registrando el ingreso');
+
+        cerrarModalRenovar();
+        toast(`✓ Plan renovado — $${Number(plan.valor).toLocaleString('es-CO')} registrado en ingresos`);
+        cargarClientes();
+        cargarAlertas();
+
+      } catch(e) {
+        toast('Error: ' + e.message, 'err');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Confirmar renovación';
+      }
+    }
+
+    function cerrarModalRenovar() {
+      document.getElementById('modalRenovarOverlay').classList.remove('show');
+      renovarClienteActual          = null;
+      renovarPlanSeleccionado       = null;
+      metodoPagoRenovarSeleccionado = '';
+    }
+    function cerrarModalRenovarSiOverlay(e) {
+      if (e.target === document.getElementById('modalRenovarOverlay')) cerrarModalRenovar();
+    }
+
+    
+    /* ══ CAMBIAR ESTADO CLIENTE (PATCH) ══
+       Cambia solo el estado sin tocar otros campos.
+       Usado desde el badge de estado en la tarjeta.
+    ══════════════════════════════════════ */
+    async function cambiarEstadoCliente(id, nuevoEstado) {
+      try {
+        const res = await fetch(`${API}/clientes.php?id=${id}`, {
+          method:  'PATCH',
+          headers: {'Content-Type':'application/json'},
+          body:    JSON.stringify({ estado: nuevoEstado })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          const msg = nuevoEstado === 'INACTIVO'
+            ? `⏸ Cliente pausado — se reactivará en 8 días automáticamente`
+            : `▶ Cliente reactivado`;
+          toast(msg);
+          cargarClientes();
+          cargarAlertas();
+        } else {
+          toast(data.error || 'Error al cambiar estado', 'err');
+        }
+      } catch(e) {
+        toast('No se pudo conectar', 'err');
+      }
+    }
+
+  
+    async function confirmarCambioEstado(id, nuevoEstado) {
+      const msg = nuevoEstado === 'INACTIVO'
+        ? '¿Pausar este cliente? Sus créditos se congelarán por 8 días y luego se reactivará automáticamente.'
+        : '¿Reactivar este cliente manualmente?';
+      if (!confirm(msg)) return;
+      await cambiarEstadoCliente(id, nuevoEstado);
+    }
+
+  </script>
+
+<!-- ══ MODAL RENOVAR PLAN ══ -->
+<div class="modal-overlay-renovar" id="modalRenovarOverlay" onclick="cerrarModalRenovarSiOverlay(event)">
+  <div class="modal-renovar">
+    <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #2a2d3a">
+      <h3 style="color:#4ade80;font-size:15px;text-transform:uppercase;letter-spacing:1px">🔄 Renovar plan</h3>
+      <button class="modal-close" onclick="cerrarModalRenovar()">✕</button>
+    </div>
+    <div style="overflow-y:auto;flex:1;padding-right:6px">
+
+      <!-- Info cliente -->
+      <div class="renovar-cliente-info">
+        <div class="rci-nombre" id="rciNombre">—</div>
+        <div class="rci-plan" style="margin-top:4px">Plan actual: <span id="rciPlanActual">—</span></div>
+        <div class="rci-plan" style="margin-top:2px">Vence: <span id="rciVence">—</span> &nbsp;·&nbsp; Estado: <span id="rciEstado" style="font-weight:700">—</span></div>
+      </div>
+
+      <!-- Créditos -->
+      <div style="background:#0f1117;border-radius:8px;padding:14px 16px;margin-bottom:16px;border:1px solid #2a2d3a;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Créditos del plan</div>
+          <div style="font-size:22px;font-weight:700;color:#c9952a" id="rciCreditos">—</div>
+        </div>
+        <div style="font-size:24px;color:#2a2d3a">→</div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Se reinician a</div>
+          <div style="font-size:22px;font-weight:700;color:#4ade80">0</div>
+        </div>
+      </div>
+
+      <!-- Plan -->
+      <div class="renovar-seccion">¿A qué plan desea renovar?</div>
+      <div class="plan-opciones" id="planOpciones">
+        <div style="color:#444;font-size:13px;padding:12px">Cargando planes...</div>
+      </div>
+
+      <!-- Fecha -->
+      <div class="renovar-seccion">Fecha de renovación</div>
+      <div class="renovar-grid">
+        <div>
+          <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Fecha inicio <span style="color:#4ade80">*</span></label>
+          <input type="date" id="renovarFechaInicio" onchange="recalcularFechaFin()" style="width:100%;padding:10px 12px;background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;color:#e0e0e0;font-size:14px">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Fecha fin <span style="font-size:10px;color:#555">(automática)</span></label>
+          <input type="date" id="renovarFechaFin" readonly style="width:100%;padding:10px 12px;background:#0f1117;border:1px solid #1a1d27;border-radius:8px;color:#555;font-size:14px">
+        </div>
+      </div>
+
+      <!-- Método de pago -->
+      <div class="renovar-seccion">¿Cómo realizó el pago?</div>
+      <div style="display:flex;gap:10px;margin-bottom:4px">
+        <div class="metodo-btn" id="ren-btn-efectivo" onclick="seleccionarMetodoRenovar('EFECTIVO')">💵 Efectivo</div>
+        <div class="metodo-btn" id="ren-btn-transferencia" onclick="seleccionarMetodoRenovar('TRANSFERENCIA')">🏦 Transferencia</div>
+      </div>
+
+      <!-- Banco -->
+      <div id="bancoSelectRenovar" style="display:none;margin-top:10px">
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">Banco de origen <span style="color:#4ade80">*</span></label>
+        <select id="renovarBanco" style="width:100%;padding:10px 12px;background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;color:#e0e0e0;font-size:14px">
+          <option value="">Selecciona el banco...</option>
+          <option>Bancolombia</option><option>Nequi</option><option>Daviplata</option>
+          <option>Banco de Bogotá</option><option>Banco Popular</option>
+          <option>BBVA Colombia</option><option>Davivienda</option>
+          <option>Banco de Occidente</option><option>Banco Caja Social</option>
+          <option>Colpatria</option><option>Itaú</option><option>Scotiabank Colpatria</option>
+          <option>AV Villas</option><option>Banco Agrario</option><option>Lulo Bank</option>
+          <option>Nu Colombia (Nubank)</option><option>Movii</option>
+          <option>Rappipay</option><option>Dale!</option><option>Pibank</option><option>Otro</option>
+        </select>
+      </div>
+
+      <!-- Preview ingreso -->
+      <div style="background:#0a1a0f;border:1px solid #166534;border-radius:8px;padding:14px 16px;margin-top:16px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Se registrará en ingresos</div>
+          <div style="font-size:12px;color:#888;font-style:italic" id="renovarConceptoPreview">Selecciona un plan</div>
+        </div>
+        <div style="font-size:22px;font-weight:700;color:#4ade80" id="renovarMontoPreview">$0</div>
+      </div>
+
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid #2a2d3a;flex-shrink:0">
+      <button class="btn" style="background:#2a2d3a;color:#888;border:1px solid #3a3d4a" onclick="cerrarModalRenovar()">Cancelar</button>
+      <button class="btn-renovar-confirmar" id="btnConfirmarRenovar" onclick="confirmarRenovar()">✅ Confirmar renovación</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

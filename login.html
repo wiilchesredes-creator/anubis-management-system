@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANUBIS BOX – Acceso</title>
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="shortcut icon" type="image/png" href="assets/logo.png">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Segoe UI',sans-serif;
+      background:#0f1117;
+      color:#e0e0e0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+    }
+
+    /* Fondo animado */
+    .bg-grid{
+      position:fixed;inset:0;
+      background-image:
+        linear-gradient(rgba(201,149,42,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,149,42,.04) 1px, transparent 1px);
+      background-size:40px 40px;
+      animation:gridMove 20s linear infinite;
+      pointer-events:none;
+    }
+    @keyframes gridMove{from{background-position:0 0}to{background-position:40px 40px}}
+
+    .bg-glow{
+      position:fixed;
+      width:600px;height:600px;
+      background:radial-gradient(circle, rgba(201,149,42,.08) 0%, transparent 70%);
+      top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      pointer-events:none;
+      animation:pulse 4s ease-in-out infinite;
+    }
+    @keyframes pulse{0%,100%{opacity:.6;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}}
+
+    /* Card de login */
+    .login-wrap{
+      position:relative;z-index:10;
+      width:100%;max-width:420px;
+      padding:24px;
+    }
+
+    .login-logo{
+      text-align:center;
+      margin-bottom:32px;
+    }
+    .login-logo img{
+      height:88px;
+      object-fit:contain;
+      filter:drop-shadow(0 0 24px rgba(201,149,42,.4));
+      animation:logoGlow 3s ease-in-out infinite;
+    }
+    @keyframes logoGlow{
+      0%,100%{filter:drop-shadow(0 0 16px rgba(201,149,42,.3))}
+      50%{filter:drop-shadow(0 0 32px rgba(201,149,42,.7))}
+    }
+    .login-logo h1{
+      font-size:22px;font-weight:900;
+      color:#c9952a;
+      letter-spacing:3px;
+      text-transform:uppercase;
+      margin-top:12px;
+    }
+    .login-logo p{
+      font-size:12px;color:#a8afbf;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      margin-top:4px;
+    }
+
+    .login-card{
+      background:#1a1d27;
+      border:1px solid #2a2d3a;
+      border-top:2px solid #c9952a;
+      border-radius:16px;
+      padding:32px;
+      box-shadow:0 24px 60px rgba(0,0,0,.6), 0 0 40px rgba(201,149,42,.1);
+    }
+
+    .login-card h2{
+      font-size:13px;color:#a8afbf;
+      text-transform:uppercase;letter-spacing:1.5px;
+      margin-bottom:24px;text-align:center;
+    }
+
+    .role-switch{
+      display:grid;grid-template-columns:1fr 1fr;gap:8px;
+      margin-bottom:18px;background:#0f1117;border:1px solid #2a2d3a;
+      border-radius:10px;padding:6px;
+    }
+    .role-btn{
+      border:none;border-radius:8px;background:transparent;color:#777;
+      padding:10px 8px;font-size:12px;font-weight:800;
+      text-transform:uppercase;letter-spacing:.5px;cursor:pointer;
+      transition:all .2s;
+    }
+    .role-btn:hover{color:#c9952a}
+    .role-btn.active{background:#c9952a;color:#000;box-shadow:0 4px 12px rgba(201,149,42,.25)}
+
+    .field{margin-bottom:18px}
+    .field label{
+      font-size:11px;color:#888;
+      text-transform:uppercase;letter-spacing:1px;
+      display:block;margin-bottom:6px;
+    }
+    .input-wrap{position:relative}
+    .input-wrap .icon{
+      position:absolute;left:12px;top:50%;
+      transform:translateY(-50%);
+      font-size:16px;color:#555;
+      pointer-events:none;
+    }
+    .field input{
+      width:100%;
+      padding:12px 12px 12px 40px;
+      background:#0f1117;
+      border:1px solid #2a2d3a;
+      border-radius:10px;
+      color:#e0e0e0;
+      font-size:14px;
+      transition:border-color .2s, box-shadow .2s;
+    }
+    .field input:focus{
+      outline:none;
+      border-color:#c9952a;
+      box-shadow:0 0 0 3px rgba(201,149,42,.12);
+    }
+    .field input.error{border-color:#f87171}
+
+    .toggle-pass{
+      position:absolute;right:12px;top:50%;
+      transform:translateY(-50%);
+      background:none;border:none;color:#555;
+      cursor:pointer;font-size:16px;padding:2px;
+    }
+    .toggle-pass:hover{color:#c9952a}
+
+    .btn-login{
+      width:100%;
+      padding:13px;
+      background:linear-gradient(135deg,#c9952a 0%,#d4a43a 100%);
+      color:#000;font-weight:700;font-size:15px;
+      border:none;border-radius:10px;
+      cursor:pointer;
+      letter-spacing:.5px;
+      transition:all .2s;
+      box-shadow:0 4px 16px rgba(201,149,42,.3);
+      margin-top:8px;
+    }
+    .btn-login:hover{
+      background:linear-gradient(135deg,#d4a43a 0%,#e0b440 100%);
+      box-shadow:0 6px 24px rgba(201,149,42,.5);
+      transform:translateY(-1px);
+    }
+    .btn-login:active{transform:translateY(0)}
+    .btn-login:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+    .error-msg{
+      display:none;
+      background:rgba(248,113,113,.1);
+      border:1px solid rgba(248,113,113,.3);
+      border-radius:8px;
+      padding:10px 14px;
+      font-size:13px;color:#f87171;
+      margin-bottom:16px;
+      text-align:center;
+    }
+    .error-msg.show{display:block}
+
+    /* Intentos fallidos */
+    .lockout-msg{
+      display:none;
+      background:rgba(248,113,113,.08);
+      border:1px solid rgba(248,113,113,.25);
+      border-radius:8px;
+      padding:12px 16px;
+      font-size:13px;color:#f87171;
+      margin-bottom:16px;text-align:center;
+    }
+    .lockout-msg.show{display:block}
+    .lockout-msg strong{display:block;font-size:16px;margin-bottom:4px}
+
+    .login-footer{
+      text-align:center;
+      margin-top:20px;
+      font-size:11px;color:#3a3d4a;
+    }
+    .login-footer span{color:#a8afbf}
+    .role-help{font-size:12px;color:#c3c8d4;margin-top:-10px;margin-bottom:16px;line-height:1.4;text-align:center}
+
+    /* Spinner */
+    .spinner{
+      display:inline-block;width:16px;height:16px;
+      border:2px solid rgba(0,0,0,.3);
+      border-top-color:#000;
+      border-radius:50%;
+      animation:spin .6s linear infinite;
+      vertical-align:middle;margin-right:6px;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<div class="login-wrap">
+  <div class="login-logo">
+    <img src="assets/logo.png" alt="ANUBIS BOX">
+    <h1>Anubis Box</h1>
+    <p>Panel de administración</p>
+  </div>
+
+  <div class="login-card">
+    <h2>🔐 Acceso restringido</h2>
+
+    <div class="lockout-msg" id="lockoutMsg">
+      <strong>⛔ Acceso bloqueado</strong>
+      Demasiados intentos fallidos. Espera <span id="lockoutTimer">30</span> segundos.
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div class="role-switch" aria-label="Tipo de acceso">
+      <button class="role-btn active" type="button" id="roleAdmin" onclick="seleccionarRol('ADMIN')">Administrador</button>
+      <button class="role-btn" type="button" id="roleAfiliado" onclick="seleccionarRol('AFILIADO')">Afiliado</button>
+    </div>
+    <div class="role-help" id="roleHelp">Acceso administrativo con usuario y contraseña asignados.</div>
+
+    <div class="field">
+      <label>Usuario</label>
+      <div class="input-wrap">
+        <span class="icon">👤</span>
+        <input type="text" id="usuario" placeholder="Nombre de usuario"
+               autocomplete="username" autocapitalize="none"
+               onkeydown="if(event.key==='Enter')intentarLogin()">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Contraseña</label>
+      <div class="input-wrap">
+        <span class="icon">🔑</span>
+        <input type="password" id="contrasena" placeholder="••••••••"
+               autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')intentarLogin()">
+        <button class="toggle-pass" type="button" onclick="togglePass()" title="Mostrar/ocultar">👁</button>
+      </div>
+    </div>
+
+    <button class="btn-login" id="btnLogin" onclick="intentarLogin()">
+      Ingresar al sistema
+    </button>
+
+    <div class="login-footer">
+      ANUBIS BOX &nbsp;·&nbsp; <span>Sistema privado</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Siempre limpiar sessionStorage y destruir sesión en servidor al cargar el login
+  // Esto cubre tanto cierre de pestaña como entrada desde el acceso directo (?logout=1)
+  sessionStorage.removeItem('ab_session_activa');
+  fetch('api/auth.php?logout=1', { cache: 'no-store' }).catch(() => {});
+
+  // Bloqueo por intentos fallidos (sessionStorage — se limpia al cerrar el navegador)
+  const MAX_INTENTOS = 5;
+  const BLOQUEO_SEG  = 30;
+  let tipoAcceso = 'ADMIN';
+  let intentosFallidos = parseInt(sessionStorage.getItem('ab_intentos') || '0');
+  let bloqueadoHasta   = parseInt(sessionStorage.getItem('ab_bloqueado') || '0');
+
+  function seleccionarRol(rol) {
+    tipoAcceso = rol;
+    document.getElementById('roleAdmin').classList.toggle('active', rol === 'ADMIN');
+    document.getElementById('roleAfiliado').classList.toggle('active', rol === 'AFILIADO');
+    document.getElementById('errorMsg').classList.remove('show');
+    document.getElementById('usuario').placeholder = rol === 'AFILIADO' ? 'Número de cédula' : 'Nombre de usuario';
+    document.getElementById('contrasena').placeholder = rol === 'AFILIADO' ? 'Número de cédula' : '••••••••';
+    document.getElementById('roleHelp').textContent = rol === 'AFILIADO'
+      ? 'Para afiliados, usuario y contraseña son el número de cédula registrado.'
+      : 'Acceso administrativo con usuario y contraseña asignados.';
+  }
+
+  function revisarBloqueo() {
+    const ahora = Date.now();
+    if (bloqueadoHasta > ahora) {
+      mostrarBloqueo(Math.ceil((bloqueadoHasta - ahora) / 1000));
+      return true;
+    }
+    return false;
+  }
+
+  function mostrarBloqueo(segs) {
+    document.getElementById('btnLogin').disabled = true;
+    document.getElementById('lockoutMsg').classList.add('show');
+    document.getElementById('lockoutTimer').textContent = segs;
+    const iv = setInterval(() => {
+      segs--;
+      document.getElementById('lockoutTimer').textContent = segs;
+      if (segs <= 0) {
+        clearInterval(iv);
+        document.getElementById('lockoutMsg').classList.remove('show');
+        document.getElementById('btnLogin').disabled = false;
+        intentosFallidos = 0;
+        sessionStorage.setItem('ab_intentos', '0');
+        sessionStorage.removeItem('ab_bloqueado');
+      }
+    }, 1000);
+  }
+
+  function togglePass() {
+    const inp = document.getElementById('contrasena');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  async function intentarLogin() {
+    if (revisarBloqueo()) return;
+
+    const usuario    = document.getElementById('usuario').value.trim();
+    const contrasena = document.getElementById('contrasena').value;
+    const errDiv     = document.getElementById('errorMsg');
+    const btn        = document.getElementById('btnLogin');
+
+    errDiv.classList.remove('show');
+    document.getElementById('usuario').classList.remove('error');
+    document.getElementById('contrasena').classList.remove('error');
+
+    if (!usuario || !contrasena) {
+      errDiv.textContent = 'Completa usuario y contraseña';
+      errDiv.classList.add('show');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Verificando...';
+
+    try {
+      const res  = await fetch('api/auth.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario, contrasena, tipo: tipoAcceso })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        intentosFallidos = 0;
+        sessionStorage.setItem('ab_intentos', '0');
+        // Marca de sesión activa — muere al cerrar pestaña/navegador
+        sessionStorage.setItem('ab_session_activa', '1');
+        sessionStorage.setItem('ab_usuario_rol', data.rol || tipoAcceso);
+        sessionStorage.setItem('ab_admin_nombre', data.nombre || data.usuario || '');
+        btn.innerHTML = '✅ Acceso concedido...';
+        setTimeout(() => window.location.replace(data.inicio || (data.rol === 'AFILIADO' ? 'horarios.html' : 'index.html')), 500);
+      } else {
+        intentosFallidos++;
+        sessionStorage.setItem('ab_intentos', intentosFallidos);
+
+        if (intentosFallidos >= MAX_INTENTOS) {
+          bloqueadoHasta = Date.now() + BLOQUEO_SEG * 1000;
+          sessionStorage.setItem('ab_bloqueado', bloqueadoHasta);
+          mostrarBloqueo(BLOQUEO_SEG);
+        }
+
+        document.getElementById('usuario').classList.add('error');
+        document.getElementById('contrasena').classList.add('error');
+        errDiv.textContent = data.error || 'Usuario o contraseña incorrectos';
+        errDiv.classList.add('show');
+        document.getElementById('contrasena').value = '';
+        btn.disabled = false;
+        btn.innerHTML = 'Ingresar al sistema';
+      }
+    } catch (e) {
+      errDiv.textContent = 'No se pudo conectar. Verifica que XAMPP esté corriendo.';
+      errDiv.classList.add('show');
+      btn.disabled = false;
+      btn.innerHTML = 'Ingresar al sistema';
+    }
+  }
+
+  revisarBloqueo();
+</script>
+</body>
+</html>

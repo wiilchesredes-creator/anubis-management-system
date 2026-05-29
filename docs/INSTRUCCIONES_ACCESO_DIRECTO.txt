@@ -1,0 +1,64 @@
+=============================================
+  ANUBIS BOX — Cómo instalar el acceso directo
+=============================================
+
+ARCHIVOS INCLUIDOS:
+  • AnubisBox.vbs              ← Este es el que pones en el escritorio
+  • AnubisBox_Launcher.bat     ← Motor del lanzador (no borrar)
+
+─────────────────────────────────────────────
+PASO 1 — Copiar los archivos
+─────────────────────────────────────────────
+Pon AMBOS archivos juntos en la misma carpeta.
+Recomendado: C:\xampp\anubisbox\
+
+─────────────────────────────────────────────
+PASO 2 — Crear el acceso directo con el logo
+─────────────────────────────────────────────
+1. Haz clic derecho sobre "AnubisBox.vbs"
+2. Selecciona "Crear acceso directo"
+3. Mueve el acceso directo al escritorio
+4. Haz clic derecho sobre el acceso directo → "Propiedades"
+5. Clic en "Cambiar icono..."
+6. Clic en "Examinar..."
+7. Navega hasta: C:\xampp\anubisbox\assets\logo.png
+
+   ⚠️ NOTA SOBRE EL ÍCONO:
+   Windows no acepta .png directamente como ícono.
+   Opciones:
+     a) Convierte logo.png a .ico en: https://convertio.co/png-ico/
+        Guárdalo como "logo.ico" en C:\xampp\anubisbox\assets\
+        Luego selecciónalo en "Cambiar icono"
+
+     b) Si no quieres convertir, deja el ícono por defecto
+        y solo cambia el nombre del acceso directo a "ANUBIS BOX"
+
+─────────────────────────────────────────────
+PASO 3 — Renombrar el acceso directo
+─────────────────────────────────────────────
+Haz clic derecho sobre el acceso directo del escritorio
+→ "Cambiar nombre" → escribe: ANUBIS BOX
+
+─────────────────────────────────────────────
+¿QUÉ HACE AL HACER DOBLE CLIC?
+─────────────────────────────────────────────
+1. Verifica si Apache está corriendo → si no, lo arranca
+2. Verifica si MySQL está corriendo  → si no, lo arranca
+3. Espera a que el servidor esté listo
+4. Abre automáticamente http://localhost/anubisbox/login.html
+   en tu navegador por defecto
+
+─────────────────────────────────────────────
+SOLUCIÓN DE PROBLEMAS
+─────────────────────────────────────────────
+• Si no abre nada: ejecuta AnubisBox_Launcher.bat
+  directamente (doble clic) para ver el error en pantalla.
+
+• Si dice "No se encontró XAMPP": edita el .bat y cambia
+  la línea:  set XAMPP=C:\xampp
+  por la ruta correcta de tu instalación.
+
+• Si el puerto 80 está ocupado: abre XAMPP Control Panel
+  manualmente y revisa qué programa usa el puerto.
+
+=============================================

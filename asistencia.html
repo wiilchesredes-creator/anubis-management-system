@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script src="auth_guard.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANUBIS BOX – Registro de asistencia</title>
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+
+    /* ── HEADER / SIDEBAR ── */
+    header{background:#1a1d27;border-bottom:2px solid #c9952a;padding:0 32px;height:80px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+    .nav-left{grid-column:1;display:flex;align-items:center;gap:8px}
+    .header-logo{grid-column:2;display:flex;justify-content:center;align-items:center}
+    .header-logo img{height:64px;object-fit:contain}
+    .menu-toggle{background:transparent;border:1px solid #2a2d3a;color:#aaa;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:18px}
+    .menu-toggle:hover{border-color:#c9952a;color:#c9952a}
+    .sidebar{position:fixed;left:0;top:0;height:100%;width:260px;background:#0f1117;border-right:1px solid #2a2d3a;transform:translateX(-110%);transition:transform .25s ease;z-index:1001;padding:22px;display:flex;flex-direction:column;gap:8px}
+    .sidebar.open{transform:translateX(0)}
+    .sidebar .logo{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .sidebar .logo img{height:44px}
+    .sidebar nav{display:flex;flex-direction:column;gap:4px;margin-top:12px}
+    .sidebar a{color:#ccc;text-decoration:none;padding:10px 12px;border-radius:8px;display:flex;align-items:center;gap:8px;font-size:14px}
+    .sidebar a:hover{background:#1a1d27;color:#c9952a}
+    .sidebar a.active{color:#c9952a;font-weight:600;background:#1a1d27}
+    .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s}
+    .sidebar-overlay.show{opacity:1;pointer-events:auto}
+
+    /* ── LAYOUT PRINCIPAL ── */
+    .main{display:flex;flex-direction:column;align-items:center;padding:40px 24px;min-height:calc(100vh - 80px)}
+
+    /* ── TÍTULO ── */
+    .titulo{text-align:center;margin-bottom:40px}
+    .titulo h1{font-size:28px;font-weight:900;color:#c9952a;letter-spacing:2px;text-transform:uppercase;text-shadow:0 0 16px rgba(201,149,42,.3)}
+    .titulo p{font-size:14px;color:#888;margin-top:6px}
+
+    /* ── RELOJ ── */
+    .reloj{font-size:52px;font-weight:700;color:#c9952a;letter-spacing:6px;text-align:center;margin-bottom:8px;font-variant-numeric:tabular-nums;text-shadow:0 0 20px rgba(201,149,42,.5),0 0 40px rgba(201,149,42,.2)}
+    .fecha-hoy{font-size:14px;color:#888;text-align:center;margin-bottom:36px;letter-spacing:1.5px;text-transform:capitalize}
+
+    /* ── CAJA DE BÚSQUEDA ── */
+    .busqueda-wrap{width:100%;max-width:520px;margin-bottom:32px}
+    .busqueda-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:block;font-weight:600}
+    .busqueda-input-wrap{position:relative;display:flex;gap:12px}
+    .busqueda-input-wrap input{
+      flex:1;
+      padding:18px 20px;
+      font-size:22px;
+      font-weight:300;
+      letter-spacing:4px;
+      background:#1a1d27;
+      border:2px solid #2a2d3a;
+      border-radius:14px;
+      color:#e0e0e0;
+      text-align:center;
+      transition:border-color .2s, box-shadow .2s;
+    }
+    .busqueda-input-wrap input:focus{
+      outline:none;
+      border-color:#c9952a;
+      box-shadow:0 0 0 4px rgba(201,149,42,.1);
+    }
+    .busqueda-input-wrap input::placeholder{color:#2a2d3a;font-size:16px;letter-spacing:2px}
+    .btn-registrar{
+      padding:18px 28px;
+      background:#c9952a;
+      color:#000;
+      font-weight:800;
+      font-size:18px;
+      border:none;
+      border-radius:14px;
+      cursor:pointer;
+      transition:all .2s;
+      white-space:nowrap;
+    }
+    .btn-registrar:hover{background:#e0a830;box-shadow:0 4px 20px rgba(201,149,42,.4);transform:translateY(-1px)}
+    .btn-registrar:active{transform:translateY(0)}
+    .busqueda-hint{font-size:12px;color:#555;text-align:center;margin-top:10px}
+
+    /* ── RESULTADO ── */
+    .resultado{width:100%;max-width:520px;animation:slideUp .3s ease}
+    @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+    /* Card OK */
+    .res-card{border-radius:16px;padding:28px;border:2px solid;position:relative;overflow:hidden}
+    .res-card.ok{background:#071a0e;border-color:#4ade80;box-shadow:0 0 40px rgba(74,222,128,.15)}
+    .res-card.err{background:#1a0707;border-color:#f87171;box-shadow:0 0 40px rgba(248,113,113,.15)}
+    .res-card.warn{background:#1a1407;border-color:#facc15;box-shadow:0 0 40px rgba(250,204,21,.15)}
+    .res-card.libre{background:#071218;border-color:#60a5fa;box-shadow:0 0 40px rgba(96,165,250,.15)}
+
+    .res-icono{font-size:56px;text-align:center;display:block;margin-bottom:16px;animation:popIn .3s ease}
+    @keyframes popIn{from{transform:scale(.5)}to{transform:scale(1)}}
+
+    .res-nombre{font-size:26px;font-weight:800;text-align:center;margin-bottom:4px}
+    .res-card.ok   .res-nombre{color:#4ade80}
+    .res-card.err  .res-nombre{color:#f87171}
+    .res-card.warn .res-nombre{color:#facc15}
+    .res-card.libre .res-nombre{color:#60a5fa}
+
+    .res-plan{font-size:13px;color:#555;text-align:center;margin-bottom:20px;text-transform:uppercase;letter-spacing:1px}
+
+    .res-mensaje{font-size:15px;text-align:center;font-weight:600;margin-bottom:20px}
+    .res-card.ok   .res-mensaje{color:#e0e0e0}
+    .res-card.err  .res-mensaje{color:#f87171}
+    .res-card.warn .res-mensaje{color:#facc15}
+    .res-card.libre .res-mensaje{color:#60a5fa}
+
+    /* Barra de créditos */
+    .creditos-wrap{background:#0f1117;border-radius:10px;padding:16px 20px}
+    .creditos-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .creditos-lbl{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px}
+    .creditos-nums{font-size:13px;font-weight:700}
+    .creditos-bar-bg{height:10px;background:#1a1d27;border-radius:999px;overflow:hidden}
+    .creditos-bar{height:100%;border-radius:999px;transition:width .6s ease;min-width:4px}
+    .creditos-bar.alto{background:linear-gradient(90deg,#4ade80,#22c55e)}
+    .creditos-bar.medio{background:linear-gradient(90deg,#facc15,#eab308)}
+    .creditos-bar.bajo{background:linear-gradient(90deg,#f87171,#ef4444)}
+    .creditos-restantes{text-align:center;margin-top:12px;font-size:13px;color:#555}
+    .creditos-restantes strong{font-size:20px;font-weight:800}
+
+    /* Auto-reset */
+    .auto-reset{text-align:center;margin-top:16px}
+    .auto-reset-bar{height:3px;background:#2a2d3a;border-radius:999px;overflow:hidden;margin-top:8px}
+    .auto-reset-fill{height:100%;background:#c9952a;border-radius:999px;transition:width linear}
+    .auto-reset-text{font-size:11px;color:#666;margin-top:4px}
+
+    /* Historial reciente */
+    .historial-titulo{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;text-align:center;margin:32px 0 12px;width:100%;max-width:520px}
+    .historial-lista{width:100%;max-width:520px;display:flex;flex-direction:column;gap:8px}
+    .historial-item{background:#1a1d27;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;border:1px solid #2a2d3a;animation:slideUp .2s ease}
+    .hist-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .hist-dot.ok{background:#4ade80}
+    .hist-dot.err{background:#f87171}
+    .hist-dot.warn{background:#facc15}
+    .hist-nombre{flex:1;font-size:13px;font-weight:600;color:#e0e0e0}
+    .hist-detalle{font-size:11px;color:#555}
+    .hist-hora{font-size:11px;color:#555;white-space:nowrap}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="nav-left">
+    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+  </div>
+  <div class="header-logo"><img src="assets/logo.png" alt="ANUBIS BOX"></div>
+<div style="grid-column:3;display:flex;justify-content:flex-end;align-items:center;gap:12px">
+    <span id="adminNombre" style="font-size:12px;color:#888"></span>
+    <a href="logout.php"
+       style="background:transparent;border:2px solid #c9952a;color:#c9952a;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.5px;transition:all .2s"
+       onmouseover="this.style.background='rgba(201,149,42,.15)';this.style.boxShadow='0 0 12px rgba(201,149,42,.3)'"
+       onmouseout="this.style.background='transparent';this.style.boxShadow='none'">
+      🚪 Cerrar sesión
+    </a>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar">
+  <div class="logo"><img src="assets/logo.png" alt="ANUBIS BOX"><strong style="color:#c9952a">ANUBIS BOX</strong></div>
+  <nav>
+    <a href="index.html">👥 Clientes</a>
+    <a href="planes.html">📋 Planes</a>
+    <a href="membresias.html">📦 Membresías</a>
+    <a href="finanzas.html">💰 Finanzas</a>
+    <a href="tienda.html">🛒 Tienda</a>
+    <a href="asistencia.html" class="active">✅ Asistencia</a>
+    <a href="horarios.html">🕐 Horarios</a>
+  </nav>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="main">
+
+  <!-- Reloj -->
+  <div class="reloj" id="reloj">00:00:00</div>
+  <div class="fecha-hoy" id="fechaHoy"></div>
+
+  <!-- Título -->
+  <div class="titulo">
+    <h1>✅ Registro de asistencia</h1>
+    <p>Ingresa la cédula del cliente para registrar su entrada</p>
+  </div>
+
+  <!-- Input cédula -->
+  <div class="busqueda-wrap">
+    <span class="busqueda-label">Número de cédula</span>
+    <div class="busqueda-input-wrap">
+      <input type="number" id="inputCedula" placeholder="Ej: 1234567890"
+             autofocus autocomplete="off"
+             onkeydown="if(event.key==='Enter') registrar()">
+      <button class="btn-registrar" onclick="registrar()">Registrar →</button>
+    </div>
+    <div class="busqueda-hint">Presiona Enter o el botón para registrar la asistencia</div>
+  </div>
+
+  <!-- Resultado -->
+  <div class="resultado" id="resultado" style="display:none"></div>
+
+  <!-- Contador + Historial del día -->
+  <div style="width:100%;max-width:520px;margin-top:32px">
+    <!-- Contador total -->
+    <div id="contadorWrap" style="display:none;background:#1a1d27;border-radius:12px;padding:18px 24px;border:1px solid #2a2d3a;border-top:2px solid #c9952a;margin-bottom:16px;display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Asistentes hoy</div>
+          <div style="font-size:40px;font-weight:900;color:#c9952a;line-height:1" id="totalContador">0</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Ingresos exitosos</div>
+          <div style="font-size:40px;font-weight:900;color:#4ade80;line-height:1" id="totalOkContador">0</div>
+        </div>
+        <div style="font-size:48px">📋</div>
+      </div>
+      <div style="font-size:11px;color:#3a3d4a;margin-top:10px;text-align:center">Se reinicia automáticamente a medianoche</div>
+    </div>
+    <!-- Lista -->
+    <div class="historial-titulo" id="histTitulo" style="display:none">Registros del día</div>
+    <div class="historial-lista" id="historialLista"></div>
+  </div>
+
+</div>
+
+<script>
+  const API = 'api';
+  let resetTimer = null;
+
+  /* ── RELOJ ── */
+  function actualizarReloj() {
+    const ahora = new Date();
+    document.getElementById('reloj').textContent =
+      ahora.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    document.getElementById('fechaHoy').textContent =
+      ahora.toLocaleDateString('es-CO', {weekday:'long', year:'numeric', month:'long', day:'numeric'})
+           .replace(/^\w/, c => c.toUpperCase());
+  }
+  actualizarReloj();
+  setInterval(actualizarReloj, 1000);
+
+  // Cargar historial persistente al iniciar
+  cargarHistorial();
+
+  /* ── REGISTRAR ── */
+  async function registrar() {
+    const cedula = document.getElementById('inputCedula').value.trim();
+    if (!cedula) { document.getElementById('inputCedula').focus(); return; }
+
+    // Limpiar reset anterior
+    if (resetTimer) clearTimeout(resetTimer);
+
+    try {
+      const res  = await fetch(`${API}/asistencia.php`, {
+        method:  'POST',
+        headers: {'Content-Type':'application/json'},
+        body:    JSON.stringify({ cedula })
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        if (data.creditos_descontados) {
+          mostrarResultado(data, 'ok');
+          agregarHistorial();
+        } else {
+          // Plan sin límite
+          mostrarResultadoLibre(data);
+          agregarHistorial();
+        }
+      } else {
+        mostrarError(data.error, data.tipo, cedula);
+        agregarHistorial();
+      }
+    } catch(e) {
+      mostrarError('No se pudo conectar. Verifica que XAMPP esté corriendo.', 'conexion', cedula);
+    }
+
+    // Limpiar input y enfocar
+    document.getElementById('inputCedula').value = '';
+    document.getElementById('inputCedula').focus();
+
+    // Auto-limpiar resultado después de 8 segundos
+    iniciarAutoReset(8);
+  }
+
+  /* ── MOSTRAR RESULTADO OK ── */
+  function mostrarResultado(data, tipo) {
+    const pct = data.creditos_max > 0
+      ? Math.round(((data.creditos_max - data.creditos_usados) / data.creditos_max) * 100)
+      : 100;
+    const colorBarra = pct > 50 ? 'alto' : pct > 20 ? 'medio' : 'bajo';
+    const colorNums  = pct > 50 ? '#4ade80' : pct > 20 ? '#facc15' : '#f87171';
+    const alertaPoc  = data.alerta_pocos
+      ? `<div style="text-align:center;margin-top:10px;font-size:12px;color:#facc15">⚠️ Quedan pocos créditos este mes</div>`
+      : '';
+
+    document.getElementById('resultado').style.display = 'block';
+    document.getElementById('resultado').innerHTML = `
+      <div class="res-card ok">
+        <span class="res-icono">✅</span>
+        <div class="res-nombre">${data.nombre}</div>
+        <div class="res-plan">${data.plan_nombre}</div>
+        <div class="res-mensaje">¡Bienvenido! Crédito registrado correctamente</div>
+        <div class="creditos-wrap">
+          <div class="creditos-info">
+            <span class="creditos-lbl">Créditos del mes</span>
+            <span class="creditos-nums" style="color:${colorNums}">${data.creditos_usados} / ${data.creditos_max}</span>
+          </div>
+          <div class="creditos-bar-bg">
+            <div class="creditos-bar ${colorBarra}" style="width:${pct}%"></div>
+          </div>
+          <div class="creditos-restantes">
+            Le quedan <strong style="color:${colorNums}">${data.creditos_restantes}</strong> crédito${data.creditos_restantes !== 1 ? 's' : ''} este mes
+          </div>
+        </div>
+        ${alertaPoc}
+        ${autoResetHTML()}
+      </div>`;
+  }
+
+  /* ── RESULTADO PLAN LIBRE ── */
+  function mostrarResultadoLibre(data) {
+    document.getElementById('resultado').style.display = 'block';
+    document.getElementById('resultado').innerHTML = `
+      <div class="res-card libre">
+        <span class="res-icono">🔓</span>
+        <div class="res-nombre">${data.nombre}</div>
+        <div class="res-plan">Plan sin límite de créditos</div>
+        <div class="res-mensaje">¡Bienvenido! Acceso ilimitado</div>
+        ${autoResetHTML()}
+      </div>`;
+  }
+
+  /* ── MOSTRAR ERROR ── */
+  function mostrarError(mensaje, tipo, cedula) {
+    const iconos = {
+      inactivo:    '⛔',
+      vencido:     '📅',
+      sin_creditos:'💳',
+      conexion:    '📡',
+    };
+    const icono = iconos[tipo] || '❌';
+    const clase = tipo === 'sin_creditos' ? 'warn' : 'err';
+
+    document.getElementById('resultado').style.display = 'block';
+    document.getElementById('resultado').innerHTML = `
+      <div class="res-card ${clase}">
+        <span class="res-icono">${icono}</span>
+        <div class="res-nombre">${tipo === 'conexion' ? 'Sin conexión' : 'Acceso denegado'}</div>
+        <div class="res-plan" style="color:#555">Cédula: ${cedula}</div>
+        <div class="res-mensaje">${mensaje}</div>
+        ${autoResetHTML()}
+      </div>`;
+  }
+
+  /* ── AUTO RESET ── */
+  function autoResetHTML() {
+    return `<div class="auto-reset">
+      <div class="auto-reset-bar"><div class="auto-reset-fill" id="autoFill" style="width:100%"></div></div>
+      <div class="auto-reset-text">Se limpiará automáticamente en <span id="autoSeg">8</span>s</div>
+    </div>`;
+  }
+
+  function iniciarAutoReset(segs) {
+    let restantes = segs;
+    const fillEl  = () => document.getElementById('autoFill');
+    const segEl   = () => document.getElementById('autoSeg');
+
+    const iv = setInterval(() => {
+      restantes--;
+      const pct = (restantes / segs) * 100;
+      if (fillEl()) fillEl().style.width = pct + '%';
+      if (segEl())  segEl().textContent  = restantes;
+      if (restantes <= 0) {
+        clearInterval(iv);
+        document.getElementById('resultado').style.display = 'none';
+      }
+    }, 1000);
+
+    resetTimer = iv;
+  }
+
+  /* ── HISTORIAL PERSISTENTE ── */
+  async function cargarHistorial() {
+    try {
+      const data = await (await fetch(`${API}/asistencia.php?historial=1`, {cache:'no-store'})).json();
+
+      const total   = data.total   || 0;
+      const totalOk = data.total_ok || 0;
+
+      // Mostrar contador
+      document.getElementById('totalContador').textContent   = total;
+      document.getElementById('totalOkContador').textContent = totalOk;
+      const cw = document.getElementById('contadorWrap');
+      if (total > 0) { cw.style.display = 'block'; }
+
+      // Mostrar lista
+      const registros = data.registros || [];
+      if (registros.length > 0) {
+        document.getElementById('histTitulo').style.display = 'block';
+        renderHistorial(registros);
+      }
+    } catch(e) {
+      console.warn('No se pudo cargar historial:', e);
+    }
+  }
+
+  function renderHistorial(registros) {
+    const lista = document.getElementById('historialLista');
+    lista.innerHTML = registros.map(h => {
+      const hora = h.hora ? h.hora.substring(0,5) : '—';
+      return `
+        <div class="historial-item">
+          <div class="hist-dot ${h.tipo}"></div>
+          <div style="flex:1">
+            <div class="hist-nombre">${h.nombre}</div>
+            <div class="hist-detalle">${h.plan_nombre || ''} ${h.detalle ? '· '+h.detalle : ''}</div>
+          </div>
+          <div class="hist-hora">${hora}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function agregarHistorial() {
+    // Recargar desde servidor para mantener consistencia
+    cargarHistorial();
+  }
+
+  /* ── SIDEBAR ── */
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('show');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#sidebar a').forEach(a => a.addEventListener('click', closeSidebar));
+  });
+</script>
+</body>
+</html>

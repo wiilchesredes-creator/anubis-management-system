@@ -1,0 +1,81 @@
+# ============================================
+# ANUBISBOX - .gitignore
+# ============================================
+
+# --- Composer / PHP Dependencies ---
+/vendor/
+composer.lock   # Descomentar solo si quieres versionar las versiones exactas de paquetes
+
+# --- Entorno y configuración sensible ---
+.env
+.env.local
+.env.*.local
+config/local.php
+config/production.php
+
+# --- IDEs y editores ---
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+.phpstorm.meta.php
+_ide_helper.php
+
+# --- Sistema Operativo ---
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# --- Logs y temporales ---
+*.log
+logs/
+tmp/
+temp/
+*.cache
+
+# --- Backups y dumps de base de datos ---
+backups/
+*.sql
+*.sql.gz
+*.dump
+*.bak
+
+# --- Archivos de subida / media (si aplica) ---
+uploads/
+media/
+public/uploads/
+public/media/
+*.pdf   # Comentar si quieres versionar PDFs de cuentas de cobro, etc.
+
+# --- Dependencias de frontend (si se agregan en el futuro) ---
+node_modules/
+npm-debug.log*
+yarn-error.log
+dist/
+build/
+
+# --- Archivos de desarrollo local ---
+*.local
+*.dev
+test_oop.php
+bootstrap_manual.php   # Solo para pruebas manuales de OOP
+
+# --- XAMPP / Servidor local ---
+.htaccess.local
+php_errors.log
+error_log
+
+# --- Windows specific ---
+*.lnk
+*.bak
+*.tmp
+
+# --- Otros ---
+*.zip
+*.tar
+*.gz
+*.rar

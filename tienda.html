@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANUBIS BOX – Tienda</title>
+    <script src="auth_guard.js"></script>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+        header{background:#1a1d27;border-bottom:2px solid #c9952a;padding:0 32px;height:80px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+        .nav-left{grid-column:1;display:flex;align-items:center;gap:8px}
+        .header-logo{grid-column:2;display:flex;justify-content:center;align-items:center}
+        .header-logo img{height:64px;object-fit:contain}
+        .container{max-width:1300px;margin:32px auto;padding:0 24px}
+
+        /* Sidebar menú lateral */
+        .menu-toggle{background:transparent;border:1px solid #2a2d3a;color:#aaa;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;gap:8px}
+        .menu-toggle:hover{border-color:#c9952a;color:#c9952a}
+        .sidebar{position:fixed;left:0;top:0;height:100%;width:260px;background:#0f1117;border-right:1px solid #2a2d3a;transform:translateX(-110%);transition:transform .25s ease;z-index:1001;padding:22px;display:flex;flex-direction:column;gap:8px}
+        .sidebar.open{transform:translateX(0)}
+        .sidebar .logo{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+        .sidebar .logo img{height:44px}
+        .sidebar nav{display:flex;flex-direction:column;gap:4px;margin-top:12px}
+        .sidebar a{color:#ccc;text-decoration:none;padding:10px 12px;border-radius:8px;display:flex;align-items:center;gap:8px;font-size:14px}
+        .sidebar a:hover{background:#1a1d27;color:#c9952a}
+        .sidebar a.active{color:#c9952a;font-weight:600;background:#1a1d27}
+        .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s}
+        .sidebar-overlay.show{opacity:1;pointer-events:auto}
+
+        .section-title {
+            font-size: 1.8rem;
+            color: #c9952a;
+            margin: 40px 0 25px;
+            text-align: center;
+        }
+
+        .tab-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .tab-btn {
+            padding: 12px 30px;
+            background: #1a1d27;
+            border: 1px solid #2a2d3a;
+            color: #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all .2s;
+        }
+
+        .tab-btn:hover {
+            border-color: #555;
+            color: #eee;
+        }
+
+        .tab-btn.active {
+            background: #c9952a;
+            color: #000;
+            border-color: #c9952a;
+            font-weight: 700;
+        }
+
+        .productos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .producto-card {
+            background:#1a1d27;
+            border: 1px solid #2a2d3a;
+            border-radius: 14px;
+            padding: 20px;
+            transition: all .3s;
+            box-shadow: 0 8px 16px rgba(0,0,0,.35);
+        }
+
+        .producto-card:hover {
+            border-color: #c9952a;
+            transform: translateY(-6px);
+            box-shadow: 0 12px 24px rgba(201,149,42,.15), 0 8px 16px rgba(0,0,0,.4);
+        }
+
+        .producto-card h3 {
+            color: #fff;
+            font-size: 17px;
+            margin-bottom: 4px;
+        }
+
+        .producto-card .categoria {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .producto-card .precio {
+            font-size: 20px;
+            font-weight: 700;
+            color: #c9952a;
+            margin: 10px 0 4px;
+        }
+
+        .stock-bajo { color: #f87171; font-weight: 600; }
+        .stock-ok { color: #4ade80; font-weight: 600; }
+
+        .btn-nuevo {
+            background: #c9952a;
+            color: #000;
+            padding: 10px 22px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .btn-nuevo:hover {
+            background: #e0a830;
+            transform: translateY(-1px);
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: #1a1d27;
+            border: 1px solid #2a2d3a;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+            border-top: 2px solid #c9952a;
+        }
+        .stat-card .label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        .stat-card .value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #c9952a;
+            margin-top: 4px;
+        }
+
+        /* Product actions */
+        .producto-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+        }
+        .producto-actions button {
+            flex: 1;
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: 1px solid #2a2d3a;
+            background: #0f1117;
+            color: #ccc;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .producto-actions button:hover {
+            border-color: #c9952a;
+            color: #c9952a;
+        }
+        .producto-actions .btn-edit:hover { border-color: #60aaee; color: #60aaee; }
+        .producto-actions .btn-delete:hover { border-color: #f87171; color: #f87171; }
+
+        /* Modal styles (consistent with the app) */
+        .modal-overlay {display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center}
+        .modal-overlay.show {display:flex}
+        .modal {background:#1a1d27;border:1px solid #2a2d3a;border-radius:16px;padding:28px;width:100%;max-width:520px;box-shadow:0 24px 48px rgba(0,0,0,.7);animation:slideUp .25s ease}
+        @keyframes slideUp {from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .modal-header {display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #2a2d3a}
+        .modal-header h3 {color:#c9952a;font-size:15px;text-transform:uppercase;letter-spacing:1px}
+        .modal-close {background:transparent;border:none;color:#555;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px}
+        .modal-close:hover {background:#2a2d3a;color:#ccc}
+        .form-grid {display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .form-grid-3 {display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+        label {font-size:12px;color:#888;display:block;margin-bottom:4px}
+        label span {color:#c9952a}
+        input, select {width:100%;padding:10px 12px;background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;color:#e0e0e0;font-size:14px}
+        input:focus, select:focus {outline:none;border-color:#c9952a}
+        .modal-footer {display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+        /* Toast */
+        .toast {position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;max-width:380px}
+        .toast.show {opacity:1;transform:translateY(0)}
+        .toast.ok {background:#1a3a2a;color:#4ade80;border:1px solid #4ade80}
+        .toast.err {background:#3a1a1a;color:#f87171;border:1px solid #f87171}
+
+        /* Beautiful payment selector (same as main app) */
+        .metodo-selector {display:flex;gap:8px;margin-bottom:16px}
+        .metodo-btn {flex:1;padding:10px;border-radius:8px;border:1px solid #2a2d3a;background:#0f1117;color:#888;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;text-align:center}
+        .metodo-btn:hover {border-color:#555;color:#ccc}
+        .metodo-btn.selected-efectivo {border-color:#60aaee;background:#1a2a3a;color:#60aaee}
+        .metodo-btn.selected-transferencia {border-color:#c084fc;background:#2a1a3a;color:#c084fc}
+
+        .venta-resumen {background:#0f1117;border:1px solid #2a2d3a;border-radius:10px;padding:14px;margin-bottom:16px}
+        .venta-resumen .total {font-size:22px;font-weight:700;color:#c9952a}
+    </style>
+
+</head>
+<body>
+
+<header>
+    <div class="nav-left">
+        <button id="menuToggle" class="menu-toggle" aria-label="Abrir menú" onclick="toggleSidebar()">☰</button>
+    </div>
+    <div class="header-logo"><img src="assets/logo.png" alt="ANUBIS BOX"></div>
+<div style="grid-column:3;display:flex;justify-content:flex-end;align-items:center;gap:12px">
+    <span id="adminNombre" style="font-size:12px;color:#888"></span>
+    <a href="logout.php"
+       style="background:transparent;border:2px solid #c9952a;color:#c9952a;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.5px;transition:all .2s"
+       onmouseover="this.style.background='rgba(201,149,42,.15)';this.style.boxShadow='0 0 12px rgba(201,149,42,.3)'"
+       onmouseout="this.style.background='transparent';this.style.boxShadow='none'">
+      🚪 Cerrar sesión
+    </a>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar">
+    <div class="logo"><img src="assets/logo.png" alt="ANUBIS BOX"><strong style="color:#c9952a">ANUBIS BOX</strong></div>
+    <nav>
+        <a href="index.html">👥 Clientes</a>
+        <a href="planes.html">📋 Planes</a>
+        <a href="membresias.html">📦 Membresías</a>
+        <a href="tienda.html" class="active">🛒 Tienda</a>
+        <a href="finanzas.html">💰 Finanzas</a>
+        <a href="asistencia.html">✅ Asistencia</a>
+        <a href="horarios.html">🕐 Horarios</a>
+    </nav>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="container">
+    <h1 style="text-align:center; color:#c9952a; margin:10px 0 24px; font-size:26px; font-weight:800; letter-spacing:1px;">🛒 TIENDA ANUBIS</h1>
+
+    <!-- ESTADÍSTICAS -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="label">Productos</div><div class="value" id="statTotal">—</div></div>
+        <div class="stat-card"><div class="label">Valor inventario</div><div class="value" id="statValor">—</div></div>
+        <div class="stat-card" onclick="mostrarProductosBajosEnStock()" style="cursor:pointer" title="Clic para ver productos con stock bajo">
+            <div class="label">Stock bajo (&le;10)</div>
+            <div class="value" id="statBajo">—</div>
+        </div>
+    </div>
+
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="mostrarSeccion(1)">📦 Inventario</button>
+        <button class="tab-btn" onclick="mostrarSeccion(2)">🛒 Realizar Venta</button>
+        <button class="tab-btn" onclick="mostrarSeccion(3)">📥 Registrar Compra / Abastecimiento</button>
+    </div>
+
+    <!-- SECCIÓN INVENTARIO -->
+    <div id="seccion1">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px; flex-wrap:wrap">
+            <input id="buscadorProductos" type="text" placeholder="Buscar producto por nombre o categoría..." 
+                   oninput="filtrarProductos()" 
+                   style="flex:1; min-width:220px; padding:10px 14px; background:#0f1117; border:1px solid #2a2d3a; border-radius:8px; color:#e0e0e0; font-size:14px">
+            <button onclick="abrirModalNuevoProducto()" class="btn-nuevo" style="white-space:nowrap">+ Nuevo Producto</button>
+        </div>
+        <div class="productos-grid" id="listaProductos"></div>
+    </div>
+
+    <!-- SECCIÓN VENTA -->
+    <div id="seccion2" style="display:none; max-width:620px; margin:0 auto;">
+        <div style="background:#1a1d27; border:1px solid #2a2d3a; border-radius:16px; padding:28px;">
+            <h3 style="color:#c9952a; margin-bottom:20px; font-size:15px; text-transform:uppercase; letter-spacing:1px; text-align:center;">Registrar venta rápida</h3>
+
+            <div>
+                <label>Producto <span>*</span></label>
+                <select id="productoVenta" onchange="actualizarResumenVenta()" style="margin-bottom:14px;"></select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                <div>
+                    <label>Cantidad <span>*</span></label>
+                    <input type="number" id="cantidadVenta" min="1" value="1" oninput="actualizarResumenVenta()">
+                </div>
+                <div>
+                    <label>Precio unitario</label>
+                    <input type="text" id="precioUnitario" readonly style="background:#11141f;color:#888;">
+                </div>
+            </div>
+
+            <label>Método de pago <span>*</span></label>
+            <div class="metodo-selector">
+                <div id="btn-efectivo" class="metodo-btn selected-efectivo" onclick="seleccionarMetodoVenta('EFECTIVO')">💵 Efectivo</div>
+                <div id="btn-transferencia" class="metodo-btn" onclick="seleccionarMetodoVenta('TRANSFERENCIA')">🏦 Transferencia</div>
+            </div>
+
+            <div class="venta-resumen">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#888;font-size:13px;">Total a cobrar</span>
+                    <span class="total" id="totalVenta">$0</span>
+                </div>
+            </div>
+
+            <button onclick="realizarVenta()" style="width:100%; padding:14px; background:#c9952a; color:#000; border:none; border-radius:10px; font-weight:700; font-size:15px; cursor:pointer;">
+                ✅ Registrar Venta
+            </button>
+        </div>
+    </div>
+
+    <!-- SECCIÓN COMPRA / ABASTECIMIENTO -->
+    <div id="seccion3" style="display:none; max-width:620px; margin:0 auto;">
+        <div style="background:#1a1d27; border:1px solid #2a2d3a; border-radius:16px; padding:28px;">
+            <h3 style="color:#4ade80; margin-bottom:20px; font-size:15px; text-transform:uppercase; letter-spacing:1px; text-align:center;">Registrar compra de inventario (egreso)</h3>
+
+            <div>
+                <label>Producto <span>*</span></label>
+                <select id="productoCompra" onchange="actualizarResumenCompra()" style="margin-bottom:14px;"></select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                <div>
+                    <label>Cantidad a comprar <span>*</span></label>
+                    <input type="number" id="cantidadCompra" min="1" value="1" oninput="actualizarResumenCompra()">
+                </div>
+                <div>
+                    <label>Precio de compra unitario</label>
+                    <input type="text" id="precioCompraUnitario" readonly style="background:#11141f;color:#888;">
+                </div>
+            </div>
+
+            <div class="venta-resumen" style="border-color:#4ade80">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#888;font-size:13px;">Total a registrar como EGRESO</span>
+                    <span class="total" id="totalCompra" style="color:#4ade80">$0</span>
+                </div>
+            </div>
+
+            <button onclick="realizarCompraInventario()" style="width:100%; padding:14px; background:#166534; color:#4ade80; border:none; border-radius:10px; font-weight:700; font-size:15px; cursor:pointer; margin-top:8px;">
+                📥 Registrar Compra + Aumentar Stock
+            </button>
+            <p style="font-size:11px;color:#666;text-align:center;margin-top:8px">
+                Solo aparecen productos que tengan <strong>Precio de Compra</strong> configurado.<br>
+                Si no ves tu producto, edítalo y agrega el costo de adquisición.<br>
+                <span style="color:#f59e0b">Abre la Consola (F12) antes de registrar para ver detalles si falla.</span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PRODUCTO -->
+<div class="modal-overlay" id="modalProducto" onclick="cerrarModalProductoSiOverlay(event)">
+    <div class="modal" onclick="event.stopImmediatePropagation()">
+        <div class="modal-header">
+            <h3 id="modalProductoTitulo">Nuevo Producto</h3>
+            <button class="modal-close" onclick="cerrarModalProducto()">✕</button>
+        </div>
+        <div>
+            <input type="hidden" id="productoId">
+            <div class="form-grid">
+                <div style="grid-column:1 / -1">
+                    <label>Nombre del producto <span>*</span></label>
+                    <input id="prodNombre" placeholder="Ej: Proteína Whey 1kg">
+                </div>
+                <div>
+                    <label>Categoría</label>
+                    <input id="prodCategoria" placeholder="Suplementos / Bebidas / Accesorios">
+                </div>
+                <div>
+                    <label>Precio de Venta <span>*</span></label>
+                    <input type="number" id="prodPrecioVenta" step="0.01" placeholder="45000">
+                    <small style="color:#666;font-size:10px">Este es el precio que se cobra al cliente</small>
+                </div>
+                <div>
+                    <label>Precio de Compra</label>
+                    <input type="number" id="prodPrecioCompra" step="0.01" placeholder="32000">
+                    <small style="color:#666;font-size:10px">Costo de adquisición (para egresos)</small>
+                </div>
+                <div>
+                    <label>Stock inicial <span>*</span></label>
+                    <input type="number" id="prodStock" placeholder="20">
+                </div>
+                <div style="grid-column:1 / -1">
+                    <label>Descripción</label>
+                    <input id="prodDescripcion" placeholder="Opcional">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="cerrarModalProducto()" style="padding:9px 22px;background:#2a2d3a;color:#ccc;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Cancelar</button>
+            <button onclick="guardarProducto()" class="btn-nuevo" style="padding:9px 28px;">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL STOCK BAJO -->
+<div class="modal-overlay" id="modalStockBajo" onclick="if (event.target.id === 'modalStockBajo') cerrarModalStockBajo()">
+    <div class="modal" onclick="event.stopImmediatePropagation()" style="max-width:720px">
+        <div class="modal-header">
+            <h3 style="color:#c9952a">Productos con stock bajo (≤ 10 unidades)</h3>
+            <button class="modal-close" onclick="cerrarModalStockBajo()">✕</button>
+        </div>
+        <div class="modal-content" id="modalStockBajoContent" style="max-height:60vh;overflow:auto">
+            <!-- Se llena dinámicamente con JS -->
+        </div>
+        <div class="modal-footer">
+            <button onclick="cerrarModalStockBajo()" style="padding:9px 22px;background:#2a2d3a;color:#ccc;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API = 'api';
+    let productosCache = [];
+    let metodoPagoVenta = 'EFECTIVO';
+
+    function toast(msg, tipo = 'ok') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = `toast ${tipo} show`;
+        setTimeout(() => t.classList.remove('show'), 3400);
+    }
+
+    async function cargarProductos() {
+        try {
+            const res = await fetch(`${API}/tienda.php`);
+            const productos = await res.json();
+            productosCache = productos;
+
+            renderProductos(productos);
+
+            // Stats (siempre sobre el total real)
+            const total = productos.length;
+            const valor = productos.reduce((sum, p) => {
+                const pv = Number(p.precio_venta || p.precio || 0);
+                return sum + (pv * Number(p.stock));
+            }, 0);
+            const bajos = productos.filter(p => Number(p.stock) <= 10).length;
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statValor').textContent = '$' + valor.toLocaleString('es-CO');
+            document.getElementById('statBajo').textContent = bajos;
+            document.getElementById('statBajo').style.color = bajos > 0 ? '#f87171' : '#4ade80';
+
+        } catch (e) {
+            document.getElementById('listaProductos').innerHTML = '<p style="color:#f87171;text-align:center">Error cargando productos</p>';
+        }
+    }
+
+    function renderProductos(lista) {
+        let html = '';
+        lista.forEach(p => {
+            const stockClass = p.stock <= 10 ? 'stock-bajo' : 'stock-ok';
+            const precioMostrar = p.precio_venta || p.precio || 0;
+            html += `
+            <div class="producto-card">
+                <h3>${p.nombre}</h3>
+                <div class="categoria">${p.categoria || 'General'}</div>
+                <div class="precio">$${Number(precioMostrar).toLocaleString('es-CO')}</div>
+                <div class="${stockClass}">Stock: ${p.stock}</div>
+                <div class="producto-actions">
+                    <button class="btn-edit" onclick="abrirModalEditar(${p.id})">✏️ Editar</button>
+                    <button class="btn-delete" onclick="eliminarProducto(${p.id}, '${p.nombre.replace(/'/g, "\\'")}')">🗑️ Eliminar</button>
+                    ${Number(p.precio_compra || 0) > 0 
+                        ? `<button onclick="reponerDesdeTarjeta(${p.id})" style="background:#166534;color:#4ade80;border:none;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;margin-left:4px">📥 Reponer</button>`
+                        : `<button onclick="abrirModalEditar(${p.id}, true); toast('Configura el Precio de Compra para poder registrar abastecimientos', 'err')" style="background:#3a2a1a;color:#f59e0b;border:none;padding:4px 8px;border-radius:6px;font-size:10px;cursor:pointer;margin-left:4px" title="Necesitas precio de compra para reponer">⚠️ Configurar costo</button>`
+                    }
+                </div>
+            </div>`;
+        });
+        document.getElementById('listaProductos').innerHTML = html || '<p style="text-align:center;color:#666;padding:40px 0">No hay productos registrados</p>';
+    }
+
+    function filtrarProductos() {
+        const q = (document.getElementById('buscadorProductos')?.value || '').toLowerCase().trim();
+        if (!q) {
+            renderProductos(productosCache);
+            return;
+        }
+        const filtrados = productosCache.filter(p =>
+            (p.nombre || '').toLowerCase().includes(q) ||
+            (p.categoria || '').toLowerCase().includes(q)
+        );
+        renderProductos(filtrados);
+    }
+
+    function mostrarSeccion(n) {
+        document.getElementById('seccion1').style.display = n === 1 ? 'block' : 'none';
+        document.getElementById('seccion2').style.display = n === 2 ? 'block' : 'none';
+        const seccion3 = document.getElementById('seccion3');
+        if (seccion3) seccion3.style.display = n === 3 ? 'block' : 'none';
+
+        if (n === 2) {
+            cargarProductosParaVenta();
+            seleccionarMetodoVenta('EFECTIVO');
+        }
+        if (n === 3) {
+            cargarProductosParaCompra();
+        }
+    }
+
+    // ===== MODAL PRODUCTO =====
+    function abrirModalNuevoProducto() {
+        document.getElementById('modalProductoTitulo').textContent = 'Nuevo Producto';
+        document.getElementById('productoId').value = '';
+        document.getElementById('prodNombre').value = '';
+        document.getElementById('prodCategoria').value = '';
+        document.getElementById('prodPrecioVenta').value = '';
+        document.getElementById('prodPrecioCompra').value = '';
+        document.getElementById('prodStock').value = '';
+        document.getElementById('prodDescripcion').value = '';
+        document.getElementById('modalProducto').classList.add('show');
+        document.getElementById('prodNombre').focus();
+    }
+
+    function abrirModalEditar(id, enfocarPrecioCompra = false) {
+        const p = productosCache.find(x => x.id == id);
+        if (!p) return;
+
+        document.getElementById('modalProductoTitulo').textContent = 'Editar Producto';
+        document.getElementById('productoId').value = p.id;
+        document.getElementById('prodNombre').value = p.nombre || '';
+        document.getElementById('prodCategoria').value = p.categoria || '';
+        // Usar ?? para preservar el valor 0 (no tratarlo como vacío)
+        document.getElementById('prodPrecioVenta').value = (p.precio_venta ?? p.precio ?? '');
+        document.getElementById('prodPrecioCompra').value = (p.precio_compra ?? '');
+        document.getElementById('prodStock').value = (p.stock ?? '');
+        document.getElementById('prodDescripcion').value = p.descripcion || '';
+        document.getElementById('modalProducto').classList.add('show');
+
+        if (enfocarPrecioCompra) {
+            const precioCompraInput = document.getElementById('prodPrecioCompra');
+            if (precioCompraInput) {
+                setTimeout(() => precioCompraInput.focus(), 50);
+            }
+        }
+    }
+
+    function cerrarModalProducto() {
+        document.getElementById('modalProducto').classList.remove('show');
+    }
+    function cerrarModalProductoSiOverlay(e) {
+        if (e.target.id === 'modalProducto') cerrarModalProducto();
+    }
+
+    // ===== MODAL STOCK BAJO =====
+    function mostrarProductosBajosEnStock() {
+        const bajos = productosCache.filter(p => Number(p.stock) <= 10);
+        const cont = document.getElementById('modalStockBajoContent');
+
+        if (bajos.length === 0) {
+            cont.innerHTML = '<p style="text-align:center;color:#888;padding:30px">No hay productos con stock bajo en este momento.</p>';
+        } else {
+            let html = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+                <thead><tr>
+                    <th style="text-align:left;padding:8px;border-bottom:1px solid #2a2d3a;color:#888">Producto</th>
+                    <th style="text-align:left;padding:8px;border-bottom:1px solid #2a2d3a;color:#888">Categoría</th>
+                    <th style="text-align:right;padding:8px;border-bottom:1px solid #2a2d3a;color:#888">Stock</th>
+                    <th style="text-align:right;padding:8px;border-bottom:1px solid #2a2d3a;color:#888">Precio Venta</th>
+                </tr></thead><tbody>`;
+
+            bajos.forEach(p => {
+                const precio = p.precio_venta || p.precio || 0;
+                html += `<tr style="border-bottom:1px solid #1f2231">
+                    <td style="padding:8px">${p.nombre}</td>
+                    <td style="padding:8px;color:#888">${p.categoria || '—'}</td>
+                    <td style="padding:8px;text-align:right;color:#f87171;font-weight:700">${p.stock}</td>
+                    <td style="padding:8px;text-align:right">$${Number(precio).toLocaleString('es-CO')}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            cont.innerHTML = html;
+        }
+
+        document.getElementById('modalStockBajo').classList.add('show');
+    }
+
+    function cerrarModalStockBajo() {
+        document.getElementById('modalStockBajo').classList.remove('show');
+    }
+
+    async function guardarProducto() {
+        const id = document.getElementById('productoId').value;
+        const rawPrecioVenta = document.getElementById('prodPrecioVenta').value;
+        const rawStock = document.getElementById('prodStock').value;
+
+        const datos = {
+            nombre: document.getElementById('prodNombre').value.trim(),
+            categoria: document.getElementById('prodCategoria').value.trim(),
+            precio_venta: rawPrecioVenta === '' ? 0 : parseFloat(rawPrecioVenta),
+            precio_compra: parseFloat(document.getElementById('prodPrecioCompra').value) || 0,
+            stock: rawStock === '' ? 0 : parseInt(rawStock),
+            descripcion: document.getElementById('prodDescripcion').value.trim()
+        };
+
+        // Compatibilidad: también enviamos "precio" con el valor de venta
+        datos.precio = datos.precio_venta;
+
+        const esNuevo = !id;
+
+        // Validación más inteligente:
+        // - Siempre requiere nombre
+        // - Para productos NUEVOS requiere precio_venta y stock (>0)
+        // - Para EDICIÓN permite stock=0 y precio_venta=0 (o vacío si no se quiere cambiar)
+        if (!datos.nombre) {
+            toast('El nombre es obligatorio', 'err');
+            return;
+        }
+
+        if (esNuevo) {
+            if (!datos.precio_venta || datos.precio_venta <= 0) {
+                toast('El Precio de Venta es obligatorio para nuevos productos', 'err');
+                return;
+            }
+            if (datos.stock === null || datos.stock < 0) {
+                toast('El Stock inicial es obligatorio para nuevos productos', 'err');
+                return;
+            }
+        } else {
+            // En edición, si el usuario dejó precio_venta vacío, lo recuperamos del caché si es posible
+            if (!datos.precio_venta || datos.precio_venta <= 0) {
+                const prodOriginal = productosCache.find(x => x.id == id);
+                if (prodOriginal && (prodOriginal.precio_venta > 0 || prodOriginal.precio > 0)) {
+                    // Restauramos el valor original para no romper la edición
+                    datos.precio_venta = prodOriginal.precio_venta || prodOriginal.precio;
+                    datos.precio = datos.precio_venta;
+                    document.getElementById('prodPrecioVenta').value = datos.precio_venta;
+                }
+            }
+            if (datos.stock === null || datos.stock < 0) {
+                const prodOriginal = productosCache.find(x => x.id == id);
+                if (prodOriginal) {
+                    datos.stock = Number(prodOriginal.stock) || 0;
+                    document.getElementById('prodStock').value = datos.stock;
+                }
+            }
+        }
+
+        try {
+            let res;
+            if (id) {
+                res = await fetch(`${API}/tienda.php?id=${id}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(datos)
+                });
+            } else {
+                res = await fetch(`${API}/tienda.php`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(datos)
+                });
+            }
+
+            const data = await res.json();
+            if (data.ok || res.ok) {
+                if (!id) {
+                    // Nuevo producto
+                    if (data.egreso_registrado && data.monto_egreso > 0) {
+                        const montoFmt = Number(data.monto_egreso).toLocaleString('es-CO');
+                        toast(`✅ Producto creado + egreso de $${montoFmt} registrado en Finanzas (INSUMOS)`);
+                    } else {
+                        toast('Producto creado (sin egreso: precio de compra o stock inicial en 0)');
+                    }
+                } else {
+                    toast('Producto actualizado');
+                }
+                cerrarModalProducto();
+                await cargarProductos();
+
+                // Refrescar las listas dependientes
+                const seccion2Visible = document.getElementById('seccion2').style.display !== 'none';
+                const seccion3Visible = document.getElementById('seccion3').style.display !== 'none';
+
+                if (seccion2Visible) cargarProductosParaVenta();
+                if (seccion3Visible) cargarProductosParaCompra();
+            } else {
+                toast(data.error || 'Error al guardar', 'err');
+            }
+        } catch (e) {
+            toast('Error de conexión', 'err');
+        }
+    }
+
+    async function eliminarProducto(id, nombre) {
+        if (!confirm(`¿Eliminar el producto "${nombre}"?`)) return;
+
+        try {
+            const res = await fetch(`${API}/tienda.php?id=${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.ok) {
+                toast('Producto eliminado');
+                await cargarProductos();
+                if (document.getElementById('seccion2').style.display !== 'none') cargarProductosParaVenta();
+            } else {
+                toast('No se pudo eliminar', 'err');
+            }
+        } catch (e) {
+            toast('Error de conexión', 'err');
+        }
+    }
+
+    // ===== VENTA =====
+    async function cargarProductosParaVenta() {
+        const sel = document.getElementById('productoVenta');
+        sel.innerHTML = '<option value="">Selecciona un producto...</option>';
+
+        productosCache.forEach(p => {
+            if (p.stock > 0) {
+                const precioV = p.precio_venta || p.precio || 0;
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `${p.nombre} — Stock: ${p.stock} — $${Number(precioV).toLocaleString('es-CO')}`;
+                opt.dataset.precio = precioV;
+                opt.dataset.stock = p.stock;
+                sel.appendChild(opt);
+            }
+        });
+        document.getElementById('cantidadVenta').value = 1;
+        actualizarResumenVenta();
+    }
+
+    function actualizarResumenVenta() {
+        const sel = document.getElementById('productoVenta');
+        const cant = parseInt(document.getElementById('cantidadVenta').value) || 1;
+        const opt = sel.options[sel.selectedIndex];
+
+        const precio = opt && opt.dataset.precio ? parseFloat(opt.dataset.precio) : 0;
+        document.getElementById('precioUnitario').value = precio ? '$' + precio.toLocaleString('es-CO') : '';
+
+        const total = precio * cant;
+        document.getElementById('totalVenta').textContent = '$' + total.toLocaleString('es-CO');
+    }
+
+    function seleccionarMetodoVenta(metodo) {
+        metodoPagoVenta = metodo;
+        const btnE = document.getElementById('btn-efectivo');
+        const btnT = document.getElementById('btn-transferencia');
+
+        if (metodo === 'EFECTIVO') {
+            btnE.className = 'metodo-btn selected-efectivo';
+            btnT.className = 'metodo-btn';
+        } else {
+            btnE.className = 'metodo-btn';
+            btnT.className = 'metodo-btn selected-transferencia';
+        }
+    }
+
+    async function realizarVenta() {
+        const productoId = document.getElementById('productoVenta').value;
+        const cantidad = parseInt(document.getElementById('cantidadVenta').value);
+
+        if (!productoId || !cantidad || cantidad < 1) {
+            toast('Selecciona producto y cantidad válida', 'err');
+            return;
+        }
+
+        const opt = document.getElementById('productoVenta').options[document.getElementById('productoVenta').selectedIndex];
+        const stockDisponible = parseInt(opt.dataset.stock);
+
+        if (cantidad > stockDisponible) {
+            toast(`Solo hay ${stockDisponible} unidades en stock`, 'err');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API}/tienda.php?venta=1`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    producto_id: parseInt(productoId),
+                    cantidad: cantidad,
+                    metodo_pago: metodoPagoVenta
+                })
+            });
+            const data = await res.json();
+
+            if (data.ok) {
+                toast(`✅ Venta registrada: $${Number(data.monto).toLocaleString('es-CO')} (ver en Finanzas → Ingresos)`);
+                await cargarProductos();
+                cargarProductosParaVenta(); // refresca el select de venta
+                document.getElementById('cantidadVenta').value = 1;
+                document.getElementById('totalVenta').textContent = '$0';
+            } else {
+                toast(data.error || 'Error al registrar la venta', 'err');
+            }
+        } catch (e) {
+            toast('Error de conexión al registrar venta', 'err');
+        }
+    }
+
+    function actualizarResumenVentaOnLoad() {
+        // helper if needed
+    }
+
+    // ===== COMPRA / ABASTECIMIENTO =====
+    async function cargarProductosParaCompra() {
+        const sel = document.getElementById('productoCompra');
+        sel.innerHTML = '<option value="">Cargando productos con precio de compra...</option>';
+
+        // Si no hay productos en caché, los cargamos primero
+        if (!productosCache || productosCache.length === 0) {
+            try {
+                await cargarProductos();
+            } catch (e) {
+                sel.innerHTML = '<option value="">Error al cargar productos</option>';
+                return;
+            }
+        }
+
+        sel.innerHTML = '<option value="">Selecciona un producto...</option>';
+
+        let count = 0;
+        productosCache.forEach(p => {
+            const precioC = Number(p.precio_compra || 0);
+            if (precioC <= 0) return;
+
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.nombre} — Stock actual: ${p.stock} — Compra: $${precioC.toLocaleString('es-CO')}`;
+            opt.dataset.precioCompra = precioC;
+            opt.dataset.stock = p.stock;
+            sel.appendChild(opt);
+            count++;
+        });
+
+        if (count === 0) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = '⚠️ Ningún producto tiene Precio de Compra. Edita los productos y agrega el costo de adquisición.';
+            opt.disabled = true;
+            sel.appendChild(opt);
+        }
+
+        document.getElementById('cantidadCompra').value = 1;
+        actualizarResumenCompra();
+    }
+
+    function actualizarResumenCompra() {
+        const sel = document.getElementById('productoCompra');
+        const cant = parseInt(document.getElementById('cantidadCompra').value) || 1;
+        const opt = sel.options[sel.selectedIndex];
+
+        const precio = (opt && opt.dataset && opt.dataset.precioCompra) ? parseFloat(opt.dataset.precioCompra) : 0;
+        document.getElementById('precioCompraUnitario').value = precio ? '$' + precio.toLocaleString('es-CO') : '';
+
+        const total = precio * cant;
+        document.getElementById('totalCompra').textContent = '$' + total.toLocaleString('es-CO');
+    }
+
+    async function realizarCompraInventario() {
+        const sel = document.getElementById('productoCompra');
+        const productoIdRaw = sel.value;
+        const cantidadRaw = document.getElementById('cantidadCompra').value;
+        const cantidad = parseInt(cantidadRaw);
+
+        // Validación muy estricta
+        if (!productoIdRaw || productoIdRaw === '' || isNaN(parseInt(productoIdRaw))) {
+            toast('Debes seleccionar un producto válido de la lista', 'err');
+            return;
+        }
+        if (!cantidad || cantidad < 1) {
+            toast('La cantidad debe ser al menos 1', 'err');
+            return;
+        }
+
+        const productoId = parseInt(productoIdRaw);
+
+        // Doble verificación contra el caché actual (evita datos desincronizados)
+        const prodEnCache = productosCache.find(p => p.id == productoId);
+        if (!prodEnCache) {
+            toast('El producto ya no existe o la lista está desactualizada. Recarga la página.', 'err');
+            cargarProductosParaCompra();
+            return;
+        }
+
+        const precioCompra = Number(prodEnCache.precio_compra || 0);
+        if (precioCompra <= 0) {
+            toast('Este producto no tiene "Precio de Compra" configurado. Edítalo primero.', 'err');
+            abrirModalEditar(productoId, true);
+            return;
+        }
+
+        // Usar el option actual solo para mostrar info (el precio real viene del caché)
+        const opt = sel.options[sel.selectedIndex];
+
+        // Log para depuración
+        const payload = { producto_id: productoId, cantidad: cantidad };
+        console.log('[COMPRA] Enviando al servidor:', payload);
+
+        try {
+            const res = await fetch(`${API}/tienda.php?compra=1`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+
+            let data;
+            try {
+                data = await res.json();
+            } catch {
+                const text = await res.text();
+                toast('Error del servidor: ' + text.substring(0, 200), 'err');
+                console.error('[COMPRA] Respuesta no JSON:', text);
+                return;
+            }
+
+            if (res.ok && data.ok) {
+                toast(`✅ Compra registrada: $${Number(data.monto).toLocaleString('es-CO')} (ver en Finanzas → Egresos)`);
+                await cargarProductos();
+                cargarProductosParaCompra();
+                document.getElementById('cantidadCompra').value = 1;
+                document.getElementById('totalCompra').textContent = '$0';
+            } else {
+                // Mostrar toda la información posible del error
+                console.error('[COMPRA] Error del servidor:', data);
+                const msg = data.detalle 
+                    ? `${data.error} — ${data.detalle}` 
+                    : (data.error || `Error ${res.status} al registrar la compra`);
+                
+                // Si el backend nos mandó lo que recibió, mostrarlo
+                if (data.recibido) {
+                    console.warn('[COMPRA] Datos que recibió el servidor:', data.recibido);
+                    toast('Error: ' + (data.error || 'Datos inválidos') + ' (ver consola para detalles)', 'err');
+                } else {
+                    toast(msg, 'err');
+                }
+            }
+        } catch (e) {
+            toast('Error de conexión al registrar compra', 'err');
+            console.error('Error en compra:', e);
+        }
+    }
+
+    function reponerDesdeTarjeta(id) {
+        const producto = productosCache.find(x => x.id == id);
+        const tienePrecioCompra = producto && Number(producto.precio_compra || 0) > 0;
+
+        if (!tienePrecioCompra) {
+            // El producto no tiene precio de compra → guiar al usuario a editarlo
+            toast('Este producto no tiene "Precio de Compra". Ábrelo en Editar y configúralo para poder registrar abastecimientos.', 'err');
+            abrirModalEditar(id, true);
+            return;
+        }
+
+        mostrarSeccion(3);
+        setTimeout(() => {
+            const sel = document.getElementById('productoCompra');
+            if (sel) {
+                sel.value = id;
+                actualizarResumenCompra();
+            }
+            const cantInput = document.getElementById('cantidadCompra');
+            if (cantInput) cantInput.focus();
+        }, 120);
+    }
+
+    // Inicialización
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarProductos();
+
+        // Atajo Escape para cerrar modal
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('modalProducto');
+                if (modal && modal.classList.contains('show')) {
+                    modal.classList.remove('show');
+                } else {
+                    const sb = document.getElementById('sidebar');
+                    const ov = document.getElementById('sidebarOverlay');
+                    if (sb) sb.classList.remove('open');
+                    if (ov) ov.classList.remove('show');
+                }
+            }
+        });
+
+        // Cerrar sidebar al hacer clic en enlaces
+        const sb = document.getElementById('sidebar');
+        if (sb) sb.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+            sb.classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('show');
+        }));
+    });
+
+    // Funciones de sidebar (por si acaso)
+    function toggleSidebar() {
+        const sb = document.getElementById('sidebar');
+        const ov = document.getElementById('sidebarOverlay');
+        const opened = sb.classList.toggle('open');
+        ov.classList.toggle('show', opened);
+    }
+    function closeSidebar() {
+        const sb = document.getElementById('sidebar');
+        const ov = document.getElementById('sidebarOverlay');
+        sb.classList.remove('open');
+        ov.classList.remove('show');
+    }
+</script>
+</body>
+</html>

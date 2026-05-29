@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script src="auth_guard.js"></script>
+  <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANUBIS BOX – Membresías</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="shortcut icon" type="image/png" href="assets/logo.png">
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+        header{background:#1a1d27;border-bottom:2px solid #c9952a;padding:0 32px;height:80px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+        .nav-left{grid-column:1;display:flex;align-items:center;gap:8px}
+        .header-logo{grid-column:2;display:flex;justify-content:center;align-items:center}
+        .header-logo img{height:64px;object-fit:contain}
+        .menu-toggle{background:transparent;border:1px solid #2a2d3a;color:#aaa;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;gap:8px}
+        .menu-toggle:hover{border-color:#c9952a;color:#c9952a}
+        .sidebar{position:fixed;left:0;top:0;height:100%;width:260px;background:#0f1117;border-right:1px solid #2a2d3a;transform:translateX(-110%);transition:transform .25s ease;z-index:1001;padding:22px;display:flex;flex-direction:column;gap:8px}
+        .sidebar.open{transform:translateX(0)}
+        .sidebar .logo{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+        .sidebar .logo img{height:44px}
+        .sidebar nav{display:flex;flex-direction:column;gap:4px;margin-top:12px}
+        .sidebar a{color:#ccc;text-decoration:none;padding:10px 12px;border-radius:8px;display:flex;align-items:center;gap:8px}
+        .sidebar a:hover{background:#1a1d27;color:#c9952a}
+        .sidebar a.active{color:#c9952a;font-weight:600}
+        .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s}
+        .sidebar-overlay.show{opacity:1;pointer-events:auto}
+        .container{max-width:1200px;margin:32px auto;padding:0 24px}
+
+        /* ── MÉTRICAS ── */
+        .resumen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px}
+        .metric{background:#1a1d27;border-radius:10px;padding:18px 20px;border:1px solid #2a2d3a;text-align:center;box-shadow:0 8px 16px rgba(0,0,0,.4),0 0 18px rgba(201,149,42,.08);border-top:2px solid #c9952a;transition:transform .3s,box-shadow .3s;position:relative;cursor:pointer}
+        .metric:hover{transform:translateY(-8px);box-shadow:0 2px 8px rgba(201,149,42,.4),0 8px 24px rgba(201,149,42,.25),0 16px 40px rgba(201,149,42,.12)}
+        .metric::before{content:'';position:absolute;left:0;right:0;height:1px;top:8px;background:linear-gradient(90deg,transparent,rgba(201,149,42,.25),transparent)}
+        .metric .lbl{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px}
+        .metric .val{font-size:26px;font-weight:700;color:#c9952a;margin-top:6px}
+        .metric-clickable-hint{font-size:10px;color:#3a3d4a;margin-top:6px;letter-spacing:.5px}
+        .metric:hover .metric-clickable-hint{color:#c9952a}
+
+        /* ── SECCIONES ── */
+        .seccion-header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+        .seccion-header h2{font-size:14px;text-transform:uppercase;letter-spacing:1px;font-weight:700}
+        .seccion-activos .seccion-header h2{color:#c9952a}
+        .seccion-inactivos .seccion-header h2{color:#555}
+        .count-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
+        .seccion-activos .count-pill{background:rgba(201,149,42,.15);color:#c9952a;border:1px solid rgba(201,149,42,.3)}
+        .seccion-inactivos .count-pill{background:#1a1d27;color:#555;border:1px solid #2a2d3a}
+        .seccion-divider{border:none;margin:40px 0;height:2px;background:linear-gradient(90deg,transparent 0%,#c9952a 20%,#ffe066 50%,#c9952a 80%,transparent 100%);box-shadow:0 0 8px rgba(201,149,42,.7),0 0 22px rgba(201,149,42,.5),0 0 44px rgba(201,149,42,.25);border-radius:2px}
+
+        /* ── GRID PLANES ── */
+        .planes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+
+        /* ── CARDS ACTIVAS ── */
+        .plan-card{background:#1a1d27;border-radius:14px;border:1px solid #2a2d3a;overflow:hidden;transition:border-color .3s,box-shadow .3s,transform .3s;box-shadow:0 8px 16px rgba(0,0,0,.4),0 0 20px rgba(201,149,42,.08);cursor:pointer}
+        .plan-card:hover{border-color:#c9952a;box-shadow:0 2px 8px rgba(201,149,42,.4),0 8px 24px rgba(201,149,42,.25),0 16px 40px rgba(201,149,42,.15);transform:translateY(-8px)}
+        .plan-header{background:linear-gradient(135deg,#1f2233 0%,#252840 50%,#1f2233 100%);padding:24px;border-bottom:2px solid #c9952a;position:relative;overflow:hidden}
+        .plan-header::before{content:'';position:absolute;top:-50%;right:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(201,149,42,.1) 0%,transparent 70%);animation:shimmer 6s infinite}
+        @keyframes shimmer{0%{transform:translate(0,0)}50%{transform:translate(10px,10px)}100%{transform:translate(0,0)}}
+        .plan-nombre{font-size:20px;font-weight:900;color:#c9952a;margin-bottom:8px;text-transform:uppercase;letter-spacing:1.5px;text-shadow:0 2px 8px rgba(201,149,42,.3);position:relative;z-index:1}
+        .plan-descripcion{font-size:14px;color:#ddd;line-height:1.6;margin-bottom:16px;max-height:5.6em;overflow:hidden;position:relative;z-index:1}
+        .plan-meta{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;position:relative;z-index:1}
+        .plan-valor{font-size:24px;font-weight:700;color:#e0e0e0}
+        .plan-duracion{font-size:12px;color:#555;text-align:right}
+        .plan-duracion span{display:block;font-size:18px;font-weight:700;color:#aaa}
+        .plan-footer{padding:14px 24px;background:#141620;display:flex;justify-content:space-between;align-items:center}
+        .badge-activo{padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#c9952a,#d4a43a);color:#000;box-shadow:0 4px 12px rgba(201,149,42,.3);display:inline-flex;align-items:center;gap:4px}
+        .badge-activo::before{content:'⊙';font-size:13px}
+
+        /* ── CARDS INACTIVAS ── */
+        .plan-card.inactiva{background:#111318;border-color:#1e2029;box-shadow:none;opacity:.7}
+        .plan-card.inactiva:hover{border-color:#4ade80;box-shadow:0 4px 20px rgba(74,222,128,.12);transform:translateY(-6px);opacity:1}
+        .plan-card.inactiva .plan-header{background:linear-gradient(135deg,#111318,#161920);border-bottom:2px solid #222530}
+        .plan-card.inactiva .plan-header::before{display:none}
+        .plan-card.inactiva .plan-nombre{color:#444;text-shadow:none}
+        .plan-card.inactiva .plan-descripcion{color:#444}
+        .plan-card.inactiva .plan-valor{color:#444}
+        .plan-card.inactiva .plan-duracion span{color:#3a3d4a}
+        .plan-card.inactiva .plan-duracion{color:#3a3d4a}
+        .plan-card.inactiva .plan-footer{background:#0d0f14}
+        .badge-inactivo{padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;background:#1a1d27;color:#444;border:1px solid #2a2d3a;display:inline-flex;align-items:center;gap:4px}
+        .badge-inactivo::before{content:'○';font-size:13px}
+        .btn-reactivar{padding:6px 14px;background:transparent;border:1px solid #1e4030;color:#4ade80;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+        .btn-reactivar:hover{background:rgba(74,222,128,.1);border-color:#4ade80;box-shadow:0 0 10px rgba(74,222,128,.15)}
+
+        .plan-empty{text-align:center;color:#444;padding:60px;font-size:14px}
+        .inactivos-empty{text-align:center;color:#333;padding:28px;font-size:13px;font-style:italic;border:1px dashed #222;border-radius:10px}
+
+        /* ── MODAL BASE ── */
+        .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(4px)}
+        .modal-backdrop.show{opacity:1;pointer-events:auto}
+        .modal{background:#1a1d27;border:1px solid #2a2d3a;border-top:2px solid #c9952a;border-radius:14px;padding:28px;width:90%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.6),0 0 40px rgba(201,149,42,.12);transform:translateY(16px) scale(.97);transition:transform .25s,opacity .25s;opacity:0}
+        .modal-backdrop.show .modal{transform:translateY(0) scale(1);opacity:1}
+        .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+        .modal-title{font-size:16px;font-weight:700;color:#c9952a;text-transform:uppercase;letter-spacing:1px}
+        .modal-close{background:transparent;border:none;color:#555;font-size:22px;cursor:pointer;padding:2px 6px;border-radius:6px;transition:color .2s}
+        .modal-close:hover{color:#c9952a}
+        .modal-plan-info{background:#0f1117;border-radius:8px;padding:14px 16px;margin-bottom:16px;border:1px solid #2a2d3a}
+        .modal-plan-info p{font-size:12px;color:#555;margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px}
+        .modal-plan-info strong{color:#e0e0e0;font-size:15px}
+        .modal-plan-info .sub{font-size:13px;color:#888;margin-top:6px;font-weight:normal}
+
+        /* ── MODAL ACTIVO (desactivar) ── */
+        .estado-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+        .estado-btn{padding:16px;border-radius:10px;border:2px solid #2a2d3a;background:#0f1117;color:#888;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;text-align:center}
+        .estado-btn:hover{border-color:#c9952a;color:#c9952a}
+        .estado-btn.selected-activo{border-color:#4ade80;background:rgba(74,222,128,.08);color:#4ade80}
+        .estado-btn.selected-inactivo{border-color:#f87171;background:rgba(248,113,113,.08);color:#f87171}
+        .estado-btn .estado-icon{font-size:24px;display:block;margin-bottom:6px}
+
+        /* ── MODAL REACTIVAR ── */
+        .modal.reactivar{border-top-color:#4ade80}
+        .modal-title.reactivar{color:#4ade80}
+        .reactivar-msg{background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.2);border-radius:8px;padding:14px 16px;font-size:14px;color:#4ade80;margin-bottom:16px;text-align:center}
+
+        .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+        .btn{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
+        .btn-primary{background:#c9952a;color:#000}
+        .btn-primary:hover{background:#e0a830}
+        .btn-success{background:#166534;color:#4ade80;border:1px solid #15803d}
+        .btn-success:hover{background:#14532d;box-shadow:0 0 12px rgba(74,222,128,.2)}
+        .btn-secondary{background:#2a2d3a;color:#888;border:1px solid #3a3d4a}
+        .btn-secondary:hover{color:#e0e0e0}
+        .btn:disabled{opacity:.5;cursor:not-allowed}
+
+        /* ── MODAL INGRESOS ── */
+        .ingresos-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+        .ingresos-table th{color:#555;font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid #2a2d3a;text-transform:uppercase;letter-spacing:1px}
+        .ingresos-table td{padding:10px;border-bottom:1px solid #1f2231;color:#ccc}
+        .ingresos-table tr:last-child td{border-bottom:none}
+        .ingresos-table .subtotal{color:#c9952a;font-weight:700;text-align:right}
+        .ingresos-total{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#0f1117;border-radius:8px;border:1px solid #2a2d3a;margin-top:4px}
+        .ingresos-total span:first-child{font-size:12px;color:#555;text-transform:uppercase;letter-spacing:1px}
+        .ingresos-total span:last-child{font-size:22px;font-weight:700;color:#c9952a}
+        .nota-estimado{font-size:11px;color:#555;margin-top:10px;text-align:center;font-style:italic}
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="nav-left">
+        <button id="menuToggle" class="menu-toggle" aria-label="Abrir menú" onclick="toggleSidebar()">☰</button>
+    </div>
+    <div class="header-logo"><img src="assets/logo.png" alt="ANUBIS BOX"></div>
+<div style="grid-column:3;display:flex;justify-content:flex-end;align-items:center;gap:12px">
+    <span id="adminNombre" style="font-size:12px;color:#888"></span>
+    <a href="logout.php"
+       style="background:transparent;border:2px solid #c9952a;color:#c9952a;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.5px;transition:all .2s"
+       onmouseover="this.style.background='rgba(201,149,42,.15)';this.style.boxShadow='0 0 12px rgba(201,149,42,.3)'"
+       onmouseout="this.style.background='transparent';this.style.boxShadow='none'">
+      🚪 Cerrar sesión
+    </a>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar">
+    <div class="logo"><img src="assets/logo.png" alt="ANUBIS BOX"><strong style="color:#c9952a">ANUBIS BOX</strong></div>
+    <nav>
+        <a href="index.html">👥 Clientes</a>
+        <a href="planes.html">📋 Planes</a>
+        <a href="membresias.html" class="active">📦 Membresías</a>
+        <a href="tienda.html">🛒 Tienda</a>
+        <a href="finanzas.html">💰 Finanzas</a>
+    <a href="asistencia.html">✅ Asistencia</a>
+    <a href="horarios.html">🕐 Horarios</a>
+    </nav>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="container">
+
+    <!-- Métricas resumen -->
+    <div class="resumen-grid" id="resumen"></div>
+
+    <!-- SECCIÓN: PLANES ACTIVOS -->
+    <div class="seccion-activos">
+        <div class="seccion-header">
+            <h2>📦 Membresías activas</h2>
+            <span class="count-pill" id="countActivos">0</span>
+        </div>
+        <div class="planes-grid" id="gridActivos">
+            <div class="plan-empty">Cargando...</div>
+        </div>
+    </div>
+
+    <hr class="seccion-divider">
+
+    <!-- SECCIÓN: PLANES INACTIVOS -->
+    <div class="seccion-inactivos">
+        <div class="seccion-header">
+            <h2>🚫 Membresías inactivas</h2>
+            <span class="count-pill" id="countInactivos">0</span>
+        </div>
+        <div class="planes-grid" id="gridInactivos">
+            <div class="inactivos-empty">Sin membresías inactivas</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal: gestionar plan ACTIVO (desactivar) -->
+<div class="modal-backdrop" id="modalEstado">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title">⚙️ Gestionar membresía</span>
+            <button class="modal-close" onclick="cerrarModalEstado()">✕</button>
+        </div>
+        <div class="modal-plan-info" id="modalPlanInfo"></div>
+        <div class="estado-options">
+            <button class="estado-btn" id="btnActivo" onclick="seleccionarEstado('activo')">
+                <span class="estado-icon">✅</span>Activo
+            </button>
+            <button class="estado-btn" id="btnInactivo" onclick="seleccionarEstado('inactivo')">
+                <span class="estado-icon">⛔</span>Inactivo
+            </button>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="cerrarModalEstado()">Cancelar</button>
+            <button class="btn btn-primary" id="btnGuardarEstado" onclick="guardarEstado()">Guardar cambios</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: reactivar plan INACTIVO -->
+<div class="modal-backdrop" id="modalReactivar">
+    <div class="modal reactivar">
+        <div class="modal-header">
+            <span class="modal-title reactivar">♻️ Reactivar membresía</span>
+            <button class="modal-close" onclick="cerrarModalReactivar()">✕</button>
+        </div>
+        <div class="modal-plan-info" id="modalReactivarInfo"></div>
+        <div class="reactivar-msg">
+            ¿Confirmas que deseas volver a activar esta membresía?<br>
+            <small style="opacity:.7">Estará disponible de nuevo para los clientes.</small>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="cerrarModalReactivar()">Cancelar</button>
+            <button class="btn btn-success" id="btnConfirmarReactivar" onclick="confirmarReactivar()">✅ Sí, reactivar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: desglose ingresos estimados -->
+<div class="modal-backdrop" id="modalIngresos">
+    <div class="modal" style="max-width:560px">
+        <div class="modal-header">
+            <span class="modal-title">📊 Desglose de ingresos estimados</span>
+            <button class="modal-close" onclick="cerrarModalIngresos()">✕</button>
+        </div>
+        <div id="modalIngresosContenido"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="cerrarModalIngresos()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API = 'api';
+    let planesData      = [];
+    let planSeleccionado  = null;
+    let estadoSeleccionado = null;
+
+    /* ── CARGAR Y RENDERIZAR ── */
+    async function cargarMembresias() {
+        try {
+            const data = await (await fetch(`${API}/planes.php`)).json();
+            planesData = data;
+
+            const activos   = data.filter(p => parseInt(p.activo) === 1);
+            const inactivos = data.filter(p => parseInt(p.activo) === 0);
+
+            // Métricas — solo sobre activos
+            const totalClientes = activos.reduce((s, p) => s + p.total_clientes, 0);
+            const totalIngresos = activos.reduce((s, p) => s + p.total_clientes * parseFloat(p.valor), 0);
+
+            document.getElementById('resumen').innerHTML = `
+              <div class="metric">
+                <div class="lbl">Membresías activas</div>
+                <div class="val">${activos.length}</div>
+              </div>
+              <div class="metric">
+                <div class="lbl">Clientes inscritos</div>
+                <div class="val">${totalClientes}</div>
+              </div>
+              <div class="metric" onclick="abrirModalIngresos()" title="Ver desglose">
+                <div class="lbl">Ingresos estimados</div>
+                <div class="val">$${totalIngresos.toLocaleString('es-CO')}</div>
+                <div class="metric-clickable-hint">▸ Click para ver desglose</div>
+              </div>
+            `;
+
+            // Contadores de sección
+            document.getElementById('countActivos').textContent   = activos.length;
+            document.getElementById('countInactivos').textContent = inactivos.length;
+
+            // Grid activos
+            document.getElementById('gridActivos').innerHTML = activos.length
+                ? activos.map(p => cardActivo(p)).join('')
+                : '<div class="plan-empty">No hay membresías activas.</div>';
+
+            // Grid inactivos
+            document.getElementById('gridInactivos').innerHTML = inactivos.length
+                ? inactivos.map(p => cardInactivo(p)).join('')
+                : '<div class="inactivos-empty">No hay membresías inactivas en este momento.</div>';
+
+        } catch (e) {
+            document.getElementById('gridActivos').innerHTML =
+                '<div class="plan-empty">No se pudo cargar la información. Asegúrate de abrir la app desde http://localhost/anubisbox/</div>';
+        }
+    }
+
+    function cardActivo(plan) {
+        const idx = planesData.findIndex(p => p.id === plan.id);
+        return `
+        <div class="plan-card" onclick="abrirModalEstado(${idx})" title="Gestionar membresía">
+            <div class="plan-header">
+                <div class="plan-nombre">${plan.nombre}</div>
+                <div class="plan-descripcion">${plan.descripcion || 'Sin descripción disponible'}</div>
+                <div class="plan-meta">
+                    <div class="plan-valor">$${Number(plan.valor).toLocaleString('es-CO')}</div>
+                    <div class="plan-duracion"><span>${plan.duracion_dias}</span>días</div>
+                </div>
+            </div>
+            <div class="plan-footer">
+                <span class="badge-activo">Activo</span>
+                <span style="font-size:11px;color:#555">Click para gestionar</span>
+            </div>
+        </div>`;
+    }
+
+    function cardInactivo(plan) {
+        const idx = planesData.findIndex(p => p.id === plan.id);
+        return `
+        <div class="plan-card inactiva" title="Click para reactivar">
+            <div class="plan-header">
+                <div class="plan-nombre">${plan.nombre}</div>
+                <div class="plan-descripcion">${plan.descripcion || 'Sin descripción disponible'}</div>
+                <div class="plan-meta">
+                    <div class="plan-valor">$${Number(plan.valor).toLocaleString('es-CO')}</div>
+                    <div class="plan-duracion"><span>${plan.duracion_dias}</span>días</div>
+                </div>
+            </div>
+            <div class="plan-footer">
+                <span class="badge-inactivo">Inactivo</span>
+                <button class="btn-reactivar" onclick="abrirModalReactivar(${idx})">♻️ Reactivar</button>
+            </div>
+        </div>`;
+    }
+
+    /* ── MODAL GESTIONAR (activo → puede desactivar) ── */
+    function abrirModalEstado(idx) {
+        planSeleccionado   = planesData[idx];
+        estadoSeleccionado = 'activo'; // siempre empieza en activo porque solo activos tienen este modal
+
+        document.getElementById('modalPlanInfo').innerHTML = `
+            <p>Plan seleccionado</p>
+            <strong>${planSeleccionado.nombre}</strong>
+            <div class="sub">$${Number(planSeleccionado.valor).toLocaleString('es-CO')} · ${planSeleccionado.duracion_dias} días</div>
+        `;
+
+        seleccionarEstado('activo');
+        document.getElementById('modalEstado').classList.add('show');
+    }
+
+    function seleccionarEstado(estado) {
+        estadoSeleccionado = estado;
+        document.getElementById('btnActivo').className   = 'estado-btn' + (estado === 'activo'   ? ' selected-activo'   : '');
+        document.getElementById('btnInactivo').className = 'estado-btn' + (estado === 'inactivo' ? ' selected-inactivo' : '');
+    }
+
+    function cerrarModalEstado() {
+        document.getElementById('modalEstado').classList.remove('show');
+        planSeleccionado   = null;
+        estadoSeleccionado = null;
+    }
+
+    async function guardarEstado() {
+        if (!planSeleccionado || !estadoSeleccionado) return;
+        await cambiarEstadoPlan(planSeleccionado.id, estadoSeleccionado === 'activo' ? 1 : 0);
+        cerrarModalEstado();
+    }
+
+    /* ── MODAL REACTIVAR (inactivo → reactivar) ── */
+    function abrirModalReactivar(idx) {
+        planSeleccionado = planesData[idx];
+        document.getElementById('modalReactivarInfo').innerHTML = `
+            <p>Membresía a reactivar</p>
+            <strong>${planSeleccionado.nombre}</strong>
+            <div class="sub">$${Number(planSeleccionado.valor).toLocaleString('es-CO')} · ${planSeleccionado.duracion_dias} días</div>
+        `;
+        document.getElementById('modalReactivar').classList.add('show');
+    }
+
+    function cerrarModalReactivar() {
+        document.getElementById('modalReactivar').classList.remove('show');
+        planSeleccionado = null;
+    }
+
+    async function confirmarReactivar() {
+        if (!planSeleccionado) return;
+        await cambiarEstadoPlan(planSeleccionado.id, 1);
+        cerrarModalReactivar();
+    }
+
+    /* ── LLAMADA AL BACKEND ── */
+    async function cambiarEstadoPlan(id, activo) {
+        const btnE = document.getElementById('btnGuardarEstado');
+        const btnR = document.getElementById('btnConfirmarReactivar');
+        const btn  = btnE || btnR;
+        if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+        try {
+            const res = await fetch(`${API}/planes.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, activo })
+            });
+            if (res.ok) {
+                await cargarMembresias();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert(err.error || 'Error al actualizar el estado.');
+            }
+        } catch (e) {
+            alert('No se pudo conectar. Verifica que XAMPP esté corriendo.');
+        } finally {
+            if (btnE) { btnE.disabled = false; btnE.textContent = 'Guardar cambios'; }
+            if (btnR) { btnR.disabled = false; btnR.textContent = '✅ Sí, reactivar'; }
+        }
+    }
+
+    /* ── MODAL INGRESOS ── */
+    function abrirModalIngresos() {
+        const activos = planesData.filter(p => parseInt(p.activo) === 1);
+        const filas   = activos.map(plan => {
+            const sub = plan.total_clientes * parseFloat(plan.valor);
+            return `<tr>
+                <td>${plan.nombre}</td>
+                <td style="text-align:center">${plan.total_clientes}</td>
+                <td style="text-align:right">$${Number(plan.valor).toLocaleString('es-CO')}</td>
+                <td class="subtotal">$${sub.toLocaleString('es-CO')}</td>
+            </tr>`;
+        }).join('');
+        const total = activos.reduce((s, p) => s + p.total_clientes * parseFloat(p.valor), 0);
+
+        document.getElementById('modalIngresosContenido').innerHTML = `
+            <table class="ingresos-table">
+                <thead><tr>
+                    <th>Membresía</th>
+                    <th style="text-align:center">Clientes</th>
+                    <th style="text-align:right">Valor/mes</th>
+                    <th style="text-align:right">Subtotal</th>
+                </tr></thead>
+                <tbody>${filas}</tbody>
+            </table>
+            <div class="ingresos-total">
+                <span>Total estimado</span>
+                <span>$${total.toLocaleString('es-CO')}</span>
+            </div>
+            <p class="nota-estimado">* Solo incluye membresías activas × clientes inscritos.</p>
+        `;
+        document.getElementById('modalIngresos').classList.add('show');
+    }
+
+    function cerrarModalIngresos() {
+        document.getElementById('modalIngresos').classList.remove('show');
+    }
+
+    /* ── CERRAR CON ESCAPE / BACKDROP ── */
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        cerrarModalEstado();
+        cerrarModalReactivar();
+        cerrarModalIngresos();
+    });
+    ['modalEstado','modalReactivar','modalIngresos'].forEach(id => {
+        document.getElementById(id).addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('show');
+        });
+    });
+
+    /* ── SIDEBAR ── */
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('show');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('#sidebar a').forEach(a => a.addEventListener('click', closeSidebar));
+    });
+
+    cargarMembresias();
+</script>
+</body>
+</html>

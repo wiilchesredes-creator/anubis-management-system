@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script src="auth_guard.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANUBIS BOX – Horarios</title>
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="shortcut icon" type="image/png" href="assets/logo.png">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
+
+    /* ── HEADER ── */
+    header{background:#1a1d27;border-bottom:2px solid #c9952a;padding:0 32px;height:80px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+    .nav-left{grid-column:1;display:flex;align-items:center;gap:8px}
+    .header-logo{grid-column:2;display:flex;justify-content:center;align-items:center}
+    .header-logo img{height:64px;object-fit:contain}
+
+    /* ── SIDEBAR ── */
+    .menu-toggle{background:transparent;border:1px solid #2a2d3a;color:#aaa;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;gap:8px}
+    .menu-toggle:hover{border-color:#c9952a;color:#c9952a}
+    .sidebar{position:fixed;left:0;top:0;height:100%;width:260px;background:#0f1117;border-right:1px solid #2a2d3a;transform:translateX(-110%);transition:transform .25s ease;z-index:1001;padding:22px;display:flex;flex-direction:column;gap:8px}
+    .sidebar.open{transform:translateX(0)}
+    .sidebar .logo{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .sidebar .logo img{height:44px}
+    .sidebar nav{display:flex;flex-direction:column;gap:4px;margin-top:12px}
+    .sidebar a{color:#ccc;text-decoration:none;padding:10px 12px;border-radius:8px;display:flex;align-items:center;gap:8px}
+    .sidebar a:hover{background:#1a1d27;color:#c9952a}
+    .sidebar a.active{color:#c9952a;font-weight:600}
+    .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s}
+    .sidebar-overlay.show{opacity:1;pointer-events:auto}
+
+    /* ── CONTAINER ── */
+    .container{max-width:1200px;margin:32px auto;padding:0 24px}
+
+    /* ── CARD BASE ── */
+    .card{background:#1a1d27;border-radius:12px;padding:24px;margin-bottom:24px;border:1px solid #2a2d3a;box-shadow:0 8px 16px rgba(0,0,0,.4),0 0 20px rgba(201,149,42,.08);border-top:2px solid #c9952a}
+    .card h2{color:#c9952a;font-size:14px;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
+    .card-subtitle{font-size:12px;color:#a8afbf;margin-bottom:20px}
+
+    /* ── HERO BANNER ── */
+    .horarios-hero{
+      background:linear-gradient(135deg,#1a1d27 0%,#0f1117 100%);
+      border:1px solid #2a2d3a;border-top:2px solid #c9952a;
+      border-radius:12px;padding:28px 32px;margin-bottom:24px;
+      display:flex;align-items:center;justify-content:space-between;gap:20px;
+      box-shadow:0 8px 32px rgba(201,149,42,.08);
+    }
+    .hero-text h1{font-size:22px;font-weight:800;color:#e0e0e0;letter-spacing:.5px}
+    .hero-text h1 span{color:#c9952a}
+    .hero-text p{font-size:13px;color:#c3c8d4;margin-top:6px}
+    .hero-badge{
+      display:flex;align-items:center;gap:8px;
+      background:rgba(201,149,42,.1);border:1px solid rgba(201,149,42,.3);
+      border-radius:8px;padding:10px 16px;
+      font-size:12px;color:#c9952a;font-weight:600;white-space:nowrap;
+    }
+    .admin-badge{
+      display:none;
+      background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);
+      border-radius:8px;padding:10px 16px;
+      font-size:12px;color:#4ade80;font-weight:600;white-space:nowrap;
+      align-items:center;gap:8px;
+    }
+    .admin-badge.visible{display:flex}
+
+    /* ── TURNO LABEL ── */
+    .turno-label{
+      display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;
+      letter-spacing:1.5px;padding:4px 12px;border-radius:20px;margin-bottom:16px;
+    }
+    .turno-manana{background:rgba(251,191,36,.1);color:#fbbf24;border:1px solid rgba(251,191,36,.3)}
+    .turno-tarde{background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.3)}
+
+    /* ── GRID HORARIOS ── */
+    .horarios-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+
+    /* ── CARD HORARIO ── */
+    .horario-card{
+      background:#0f1117;border:1px solid #2a2d3a;border-radius:12px;
+      padding:20px;position:relative;overflow:hidden;
+      transition:transform .25s,box-shadow .25s,border-color .25s;
+    }
+    .horario-card::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:3px;
+      background:linear-gradient(90deg,#c9952a,#e0b440);
+      opacity:0;transition:opacity .25s;
+    }
+    .horario-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(201,149,42,.18);border-color:#c9952a}
+    .horario-card:hover::before{opacity:1}
+
+    .horario-time{
+      font-size:26px;font-weight:900;color:#e0e0e0;
+      letter-spacing:-0.5px;line-height:1;margin-bottom:4px;
+    }
+    .horario-time span{color:#c9952a}
+    .horario-periodo{font-size:12px;color:#a8afbf;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+
+    /* ── INSTRUCTOR AREA ── */
+    .instructor-block{margin-bottom:12px}
+    .instructor-label{font-size:10px;color:#9aa3b7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+
+    /* Vista read-only */
+    .instructor-display{
+      display:flex;align-items:center;gap:10px;
+      background:#1a1d27;border:1px solid #2a2d3a;border-radius:8px;
+      padding:10px 14px;min-height:42px;
+    }
+    .instructor-avatar{
+      width:28px;height:28px;border-radius:50%;
+      background:linear-gradient(135deg,#c9952a,#e0b440);
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:700;color:#000;flex-shrink:0;
+    }
+    .instructor-nombre{font-size:13px;color:#e0e0e0;font-weight:600}
+    .instructor-empty{font-size:13px;color:#9aa3b7;font-style:italic}
+
+    /* Vista editable */
+    .instructor-input{
+      width:100%;padding:10px 12px;background:#0f1117;
+      border:1px solid #2a2d3a;border-radius:8px;
+      color:#e0e0e0;font-size:13px;transition:border .2s;
+      display:none;
+    }
+    .instructor-input:focus{outline:none;border-color:#c9952a}
+
+    /* ── CUPOS ── */
+    .cupos-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .cupos-label{font-size:10px;color:#9aa3b7;text-transform:uppercase;letter-spacing:1px}
+    .cupos-display{display:flex;align-items:center;gap:8px}
+    .cupos-numero{font-size:20px;font-weight:800;color:#c9952a}
+    .cupos-total{font-size:12px;color:#c3c8d4}
+    .cupos-bar{width:100%;height:4px;background:#2a2d3a;border-radius:2px;margin-bottom:14px;overflow:hidden}
+    .cupos-bar-fill{height:100%;background:linear-gradient(90deg,#c9952a,#e0b440);border-radius:2px;transition:width .4s ease}
+
+    /* Input cupos editable */
+    .cupos-input{
+      width:80px;padding:6px 10px;background:#0f1117;
+      border:1px solid #2a2d3a;border-radius:8px;
+      color:#c9952a;font-size:16px;font-weight:800;text-align:center;
+      transition:border .2s;display:none;
+    }
+    .cupos-input:focus{outline:none;border-color:#c9952a}
+
+    /* ── ESTADO CHIP ── */
+    .estado-chip{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;
+      cursor:default;
+    }
+    .estado-activo{background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.25)}
+    .estado-inactivo{background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.25)}
+    .estado-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+    /* Toggle estado (solo admin) */
+    .estado-toggle{cursor:pointer;transition:opacity .2s}
+    .estado-toggle:hover{opacity:.75}
+
+    /* ── NOTAS ── */
+    .notas-area{
+      font-size:12px;color:#c3c8d4;line-height:1.6;
+      background:#1a1d27;border:1px solid #2a2d3a;border-radius:8px;
+      padding:10px 12px;min-height:40px;word-break:break-word;
+    }
+    .notas-area.empty-note{color:#8b93a7;font-style:italic}
+    .notas-textarea{
+      width:100%;font-size:12px;color:#ccc;
+      background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;
+      padding:10px 12px;resize:none;height:70px;line-height:1.6;
+      transition:border .2s;display:none;font-family:inherit;
+    }
+    .notas-textarea:focus{outline:none;border-color:#c9952a}
+
+    /* ── BTN GUARDAR (solo admin) ── */
+    .card-actions{margin-top:14px;display:none;gap:8px}
+    .card-actions.visible{display:flex}
+    .btn-guardar{
+      flex:1;padding:9px;background:#c9952a;color:#000;
+      border:none;border-radius:8px;font-size:12px;font-weight:700;
+      cursor:pointer;transition:all .2s;
+    }
+    .btn-guardar:hover{background:#e0a830;transform:translateY(-1px)}
+    .btn-guardar:disabled{opacity:.5;cursor:not-allowed;transform:none}
+    .btn-reset{
+      padding:9px 14px;background:transparent;color:#a8afbf;
+      border:1px solid #2a2d3a;border-radius:8px;font-size:12px;
+      cursor:pointer;transition:all .2s;
+    }
+    .btn-reset:hover{border-color:#a8afbf;color:#fff}
+
+    .reserva-actions{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+    .btn-reservar{
+      width:100%;padding:11px 12px;background:#c9952a;color:#050505;
+      border:none;border-radius:8px;font-size:13px;font-weight:800;
+      cursor:pointer;transition:all .2s;
+    }
+    .btn-reservar:hover{background:#e0a830;transform:translateY(-1px)}
+    .btn-reservar:disabled{background:#2a2d3a;color:#9aa3b7;cursor:not-allowed;transform:none}
+    .btn-cancelar-reserva{
+      width:100%;padding:10px 12px;background:transparent;color:#fca5a5;
+      border:1px solid rgba(248,113,113,.35);border-radius:8px;
+      font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;
+    }
+    .btn-cancelar-reserva:hover{background:rgba(248,113,113,.08)}
+    .reserva-status{font-size:12px;color:#c3c8d4;text-align:center;line-height:1.4}
+
+    /* ── SEPARADOR TURNO ── */
+    .turno-section{margin-bottom:28px}
+    .turno-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .turno-line{flex:1;height:1px;background:#2a2d3a}
+
+    /* ── TOAST ── */
+    .toast{position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;max-width:380px}
+    .toast.show{opacity:1;transform:translateY(0)}
+    .toast.ok{background:#1a3a2a;color:#4ade80;border:1px solid #4ade80}
+    .toast.err{background:#3a1a1a;color:#f87171;border:1px solid #f87171}
+
+    /* ── MODAL PIN ADMIN ── */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+    .modal-overlay.show{display:flex}
+    .modal-pin{background:#1a1d27;border:1px solid #2a2d3a;border-top:2px solid #c9952a;border-radius:16px;padding:32px;width:100%;max-width:380px;box-shadow:0 24px 48px rgba(0,0,0,.7);animation:slideUp .25s ease}
+    @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .modal-pin h3{color:#c9952a;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+    .modal-pin p{font-size:12px;color:#555;margin-bottom:20px}
+    .pin-dots{display:flex;gap:10px;justify-content:center;margin-bottom:24px}
+    .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid #2a2d3a;background:transparent;transition:all .2s}
+    .pin-dot.filled{background:#c9952a;border-color:#c9952a}
+    .pin-teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .pin-btn{
+      padding:16px;background:#0f1117;border:1px solid #2a2d3a;
+      border-radius:10px;color:#e0e0e0;font-size:18px;font-weight:600;
+      cursor:pointer;transition:all .2s;text-align:center;
+    }
+    .pin-btn:hover{border-color:#c9952a;color:#c9952a;background:#15171f}
+    .pin-btn:active{transform:scale(.95)}
+    .pin-btn.del{font-size:14px;color:#555}
+    .pin-btn.del:hover{color:#f87171;border-color:#f87171}
+    .pin-error{text-align:center;font-size:12px;color:#f87171;margin-top:12px;min-height:18px;transition:opacity .2s}
+    .pin-cancel{
+      width:100%;margin-top:16px;padding:10px;background:transparent;
+      border:1px solid #2a2d3a;border-radius:8px;color:#555;
+      font-size:13px;cursor:pointer;transition:all .2s;
+    }
+    .pin-cancel:hover{border-color:#555;color:#888}
+
+    /* ── LOCK ICON en horario card ── */
+    .lock-icon{position:absolute;top:14px;right:14px;font-size:14px;color:#333;transition:color .2s}
+    .horario-card:hover .lock-icon{color:#555}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:600px){
+      .horarios-hero{flex-direction:column;align-items:flex-start;gap:12px}
+      .horarios-grid{grid-template-columns:1fr}
+      header{padding:0 16px}
+      .container{padding:0 16px}
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="nav-left">
+    <button class="menu-toggle" aria-label="Abrir menú" onclick="toggleSidebar()">☰</button>
+  </div>
+  <div class="header-logo"><img src="assets/logo.png" alt="ANUBIS BOX"></div>
+  <div style="grid-column:3;display:flex;justify-content:flex-end;align-items:center;gap:12px">
+    <span id="adminNombre" style="font-size:12px;color:#888"></span>
+    <a href="logout.php"
+      style="background:transparent;border:2px solid #c9952a;color:#c9952a;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:.5px;transition:all .2s"
+      onmouseover="this.style.background='rgba(201,149,42,.15)';this.style.boxShadow='0 0 12px rgba(201,149,42,.3)'"
+      onmouseout="this.style.background='transparent';this.style.boxShadow='none'">
+      🚪 Cerrar sesión
+    </a>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="logo"><img src="assets/logo.png" alt="ANUBIS BOX"><strong style="color:#c9952a">ANUBIS BOX</strong></div>
+  <nav>
+    <a href="index.html">👥 Clientes</a>
+    <a href="planes.html">📋 Planes</a>
+    <a href="membresias.html">📦 Membresías</a>
+    <a href="tienda.html">🛒 Tienda</a>
+    <a href="finanzas.html">💰 Finanzas</a>
+    <a href="asistencia.html">✅ Asistencia</a>
+    <a href="horarios.html" class="active">🕐 Horarios</a>
+  </nav>
+</aside>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="horarios-hero">
+    <div class="hero-text">
+      <h1>Horarios de <span>Entrenamiento</span></h1>
+      <p>Clases disponibles de lunes a sábado · Actualizado en tiempo real</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+      <div class="hero-badge">🕐 Horarios Anubis Box</div>
+      <div class="admin-badge" id="adminBadge">🔓 Modo Administrador</div>
+      <button id="btnModoAdmin"
+        style="background:transparent;border:1px solid #2a2d3a;color:#555;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;transition:all .2s"
+        onmouseover="this.style.borderColor='#c9952a';this.style.color='#c9952a'"
+        onmouseout="this.style.borderColor='#2a2d3a';this.style.color='#555'"
+        onclick="solicitarAdmin()">
+        🔑 Admin
+      </button>
+    </div>
+  </div>
+
+  <!-- MAÑANA -->
+  <div class="turno-section">
+    <div class="turno-header">
+      <span class="turno-label turno-manana">☀️ Mañana</span>
+      <div class="turno-line"></div>
+    </div>
+    <div class="horarios-grid" id="grid-manana"></div>
+  </div>
+
+  <!-- TARDE -->
+  <div class="turno-section">
+    <div class="turno-header">
+      <span class="turno-label turno-tarde">🌆 Tarde</span>
+      <div class="turno-line"></div>
+    </div>
+    <div class="horarios-grid" id="grid-tarde"></div>
+  </div>
+
+</div>
+
+<!-- MODAL PIN -->
+<div class="modal-overlay" id="modalPin">
+  <div class="modal-pin">
+    <h3>🔑 Acceso Administrador</h3>
+    <p>Ingresa el PIN para editar los horarios</p>
+    <div class="pin-dots" id="pinDots">
+      <div class="pin-dot" id="dot0"></div>
+      <div class="pin-dot" id="dot1"></div>
+      <div class="pin-dot" id="dot2"></div>
+      <div class="pin-dot" id="dot3"></div>
+    </div>
+    <div class="pin-teclado">
+      <button class="pin-btn" onclick="pinDigit('1')">1</button>
+      <button class="pin-btn" onclick="pinDigit('2')">2</button>
+      <button class="pin-btn" onclick="pinDigit('3')">3</button>
+      <button class="pin-btn" onclick="pinDigit('4')">4</button>
+      <button class="pin-btn" onclick="pinDigit('5')">5</button>
+      <button class="pin-btn" onclick="pinDigit('6')">6</button>
+      <button class="pin-btn" onclick="pinDigit('7')">7</button>
+      <button class="pin-btn" onclick="pinDigit('8')">8</button>
+      <button class="pin-btn" onclick="pinDigit('9')">9</button>
+      <button class="pin-btn del" onclick="pinBorrar()">⌫</button>
+      <button class="pin-btn" onclick="pinDigit('0')">0</button>
+      <button class="pin-btn del" onclick="pinLimpiar()">✕</button>
+    </div>
+    <div class="pin-error" id="pinError"></div>
+    <button class="pin-cancel" onclick="cerrarPin()">Cancelar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   CONFIGURACIÓN
+   ========================================================= */
+const API = 'api';
+// El PIN se valida en el servidor vía api/horarios.php.
+
+/* =========================================================
+   DATOS DE HORARIOS
+   Los horarios se cargan desde el servidor y se persisten en MySQL.
+   Definimos aquí los slots fijos (no editables por el admin).
+   ========================================================= */
+const SLOTS_MANANA = [
+  { id: 'h_5_6',  hora: '5:00', fin: '6:00',  periodo: 'AM' },
+  { id: 'h_6_7',  hora: '6:00', fin: '7:00',  periodo: 'AM' },
+  { id: 'h_7_8',  hora: '7:00', fin: '8:00',  periodo: 'AM' },
+  { id: 'h_8_9',  hora: '8:00', fin: '9:00',  periodo: 'AM' },
+];
+const SLOTS_TARDE = [
+  { id: 'h_16_17', hora: '4:00', fin: '5:00',  periodo: 'PM' },
+  { id: 'h_17_18', hora: '5:00', fin: '6:00',  periodo: 'PM' },
+  { id: 'h_18_19', hora: '6:00', fin: '7:00',  periodo: 'PM' },
+  { id: 'h_19_20', hora: '7:00', fin: '8:00',  periodo: 'PM' },
+];
+
+/* =========================================================
+   ESTADO GLOBAL
+   ========================================================= */
+let modoAdmin = false;
+let rolUsuario = sessionStorage.getItem('ab_usuario_rol') || 'ADMIN';
+let horarioData = {}; // { id: { instructor, cupos, cupos_max, estado, notas } }
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+function toast(msg, tipo = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${tipo} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* =========================================================
+   MODAL PIN ADMIN
+   ========================================================= */
+let pinActual = '';
+
+function solicitarAdmin() {
+  if (modoAdmin) {
+    desactivarAdmin();
+    return;
+  }
+  pinActual = '';
+  actualizarDots();
+  document.getElementById('pinError').textContent = '';
+  document.getElementById('modalPin').classList.add('show');
+}
+
+function cerrarPin() {
+  document.getElementById('modalPin').classList.remove('show');
+  pinActual = '';
+  actualizarDots();
+}
+
+function pinDigit(d) {
+  if (pinActual.length >= 4) return;
+  pinActual += d;
+  actualizarDots();
+  if (pinActual.length === 4) {
+    setTimeout(verificarPin, 200);
+  }
+}
+
+function pinBorrar() {
+  pinActual = pinActual.slice(0, -1);
+  actualizarDots();
+  document.getElementById('pinError').textContent = '';
+}
+
+function pinLimpiar() {
+  pinActual = '';
+  actualizarDots();
+  document.getElementById('pinError').textContent = '';
+}
+
+function actualizarDots() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('dot' + i).classList.toggle('filled', i < pinActual.length);
+  }
+}
+
+async function verificarPin() {
+  // Verificación contra el servidor
+  try {
+    const res = await fetch(`${API}/horarios.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'verificar_pin', pin: pinActual })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      activarAdmin();
+      cerrarPin();
+    } else {
+      document.getElementById('pinError').textContent = '❌ PIN incorrecto';
+      pinActual = '';
+      actualizarDots();
+      // Animación de shake en dots
+      const dots = document.getElementById('pinDots');
+      dots.style.animation = 'shake .3s ease';
+      setTimeout(() => dots.style.animation = '', 300);
+    }
+  } catch (e) {
+    document.getElementById('pinError').textContent = 'No se pudo verificar el acceso';
+    pinActual = '';
+    actualizarDots();
+  }
+}
+
+function activarAdmin() {
+  modoAdmin = true;
+  document.getElementById('adminBadge').classList.add('visible');
+  document.getElementById('btnModoAdmin').textContent = '🔒 Salir de Admin';
+  document.getElementById('btnModoAdmin').style.borderColor = '#4ade80';
+  document.getElementById('btnModoAdmin').style.color = '#4ade80';
+  renderTodos();
+  toast('✓ Modo administrador activado');
+}
+
+function desactivarAdmin() {
+  modoAdmin = false;
+  document.getElementById('adminBadge').classList.remove('visible');
+  document.getElementById('btnModoAdmin').textContent = '🔑 Admin';
+  document.getElementById('btnModoAdmin').style.borderColor = '#2a2d3a';
+  document.getElementById('btnModoAdmin').style.color = '#555';
+  renderTodos();
+  toast('Modo administrador desactivado', 'ok');
+}
+
+/* =========================================================
+   CARGA DE DATOS DESDE API
+   ========================================================= */
+async function cargarHorarios() {
+  try {
+    const res = await fetch(`${API}/horarios.php`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    // data es array: [{ slot_id, instructor, cupos, cupos_max, estado, notas }]
+    data.forEach(h => {
+      horarioData[h.slot_id] = {
+        instructor: h.instructor || '',
+        cupos:      parseInt(h.cupos || 0),
+        cupos_max:  parseInt(h.cupos_max || 20),
+        estado:     h.estado || 'ACTIVO',
+        notas:      h.notas || '',
+        reservado_por_mi: !!h.reservado_por_mi
+      };
+    });
+  } catch (e) {
+    // Si falla la API (primera vez o sin BD), usamos defaults
+    console.warn('Usando valores por defecto para horarios');
+  }
+  // Asegurar que todos los slots tengan datos
+  [...SLOTS_MANANA, ...SLOTS_TARDE].forEach(s => {
+    if (!horarioData[s.id]) {
+      horarioData[s.id] = { instructor: '', cupos: 0, cupos_max: 20, estado: 'ACTIVO', notas: '', reservado_por_mi: false };
+    }
+  });
+  renderTodos();
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function renderTodos() {
+  renderGrid('grid-manana', SLOTS_MANANA);
+  renderGrid('grid-tarde', SLOTS_TARDE);
+}
+
+function renderGrid(containerId, slots) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = slots.map(slot => renderCard(slot)).join('');
+}
+
+function renderCard(slot) {
+  const d = horarioData[slot.id];
+  const ocupado = d.cupos_max > 0 ? Math.round((d.cupos / d.cupos_max) * 100) : 0;
+  const estadoClass = d.estado === 'ACTIVO' ? 'estado-activo' : 'estado-inactivo';
+  const estadoIcon = d.estado === 'ACTIVO' ? '●' : '●';
+  const estadoTxt = d.estado === 'ACTIVO' ? 'Activa' : 'Inactiva';
+  const esAfiliado = rolUsuario === 'AFILIADO';
+  const cuposLlenos = Number(d.cupos || 0) >= Number(d.cupos_max || 0);
+
+  // Iniciales del instructor
+  const iniciales = d.instructor
+    ? d.instructor.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : '?';
+
+  const instructorHtml = modoAdmin ? `
+    <div class="instructor-display" id="disp-instr-${slot.id}">
+      <div class="instructor-avatar">${iniciales}</div>
+      <span class="${d.instructor ? 'instructor-nombre' : 'instructor-empty'}">
+        ${d.instructor || 'Sin asignar'}
+      </span>
+    </div>
+    <input
+      class="instructor-input"
+      id="inp-instr-${slot.id}"
+      placeholder="Nombre del instructor..."
+      value="${escHtml(d.instructor)}"
+      style="display:none"
+    >
+  ` : `
+    <div class="instructor-display">
+      <div class="instructor-avatar">${iniciales}</div>
+      <span class="${d.instructor ? 'instructor-nombre' : 'instructor-empty'}">
+        ${d.instructor || 'Sin asignar'}
+      </span>
+    </div>
+  `;
+
+  const cuposHtml = modoAdmin ? `
+    <div class="cupos-row">
+      <span class="cupos-label">Cupos</span>
+      <div class="cupos-display" id="disp-cupos-${slot.id}">
+        <span class="cupos-numero">${d.cupos}</span>
+        <span class="cupos-total">/ ${d.cupos_max}</span>
+      </div>
+      <input
+        class="cupos-input"
+        id="inp-cupos-max-${slot.id}"
+        type="number" min="1" max="100"
+        value="${d.cupos_max}"
+        title="Cupos máximos"
+        style="display:none"
+      >
+    </div>
+  ` : `
+    <div class="cupos-row">
+      <span class="cupos-label">Cupos</span>
+      <div class="cupos-display">
+        <span class="cupos-numero">${d.cupos}</span>
+        <span class="cupos-total">/ ${d.cupos_max}</span>
+      </div>
+    </div>
+  `;
+
+  const notasHtml = modoAdmin ? `
+    <div class="notas-area ${d.notas ? '' : 'empty-note'}" id="disp-notas-${slot.id}">
+      ${d.notas || 'Sin notas adicionales'}
+    </div>
+    <textarea
+      class="notas-textarea"
+      id="inp-notas-${slot.id}"
+      placeholder="Notas, indicaciones especiales..."
+      style="display:none"
+    >${escHtml(d.notas)}</textarea>
+  ` : `
+    <div class="notas-area ${d.notas ? '' : 'empty-note'}">
+      ${d.notas || 'Sin notas adicionales'}
+    </div>
+  `;
+
+  const estadoHtml = modoAdmin
+    ? `<span class="estado-chip ${estadoClass} estado-toggle" onclick="toggleEstado('${slot.id}')" title="Click para cambiar estado">
+        <span class="estado-dot"></span>${estadoTxt}
+       </span>`
+    : `<span class="estado-chip ${estadoClass}">
+        <span class="estado-dot"></span>${estadoTxt}
+       </span>`;
+
+  const actionsHtml = modoAdmin ? `
+    <div class="card-actions visible">
+      <button class="btn-reset" onclick="entrarEdicion('${slot.id}')">✏️ Editar</button>
+      <button class="btn-guardar" id="btn-save-${slot.id}" onclick="guardarHorario('${slot.id}')" disabled>💾 Guardar</button>
+    </div>
+  ` : '';
+
+  const reservaHtml = (!modoAdmin && esAfiliado) ? `
+    <div class="reserva-actions">
+      ${d.reservado_por_mi ? `
+        <div class="reserva-status">Tienes cupo apartado en este horario para hoy.</div>
+        <button class="btn-cancelar-reserva" onclick="cancelarReserva()">Cancelar cupo</button>
+      ` : `
+        <button
+          class="btn-reservar"
+          onclick="reservarCupo('${slot.id}')"
+          ${d.estado !== 'ACTIVO' || cuposLlenos ? 'disabled' : ''}
+        >
+          ${d.estado !== 'ACTIVO' ? 'Horario inactivo' : (cuposLlenos ? 'Sin cupos disponibles' : 'Apartar cupo')}
+        </button>
+      `}
+    </div>
+  ` : '';
+
+  return `
+    <div class="horario-card" id="card-${slot.id}">
+      ${!modoAdmin && !esAfiliado ? '<span class="lock-icon">🔒</span>' : ''}
+      <div class="horario-time">
+        ${slot.hora}<span> – ${slot.fin}</span>
+      </div>
+      <div class="horario-periodo">${slot.periodo}</div>
+
+      <div class="instructor-block">
+        <div class="instructor-label">Instructor</div>
+        ${instructorHtml}
+      </div>
+
+      ${cuposHtml}
+      <div class="cupos-bar">
+        <div class="cupos-bar-fill" style="width:${ocupado}%"></div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span class="instructor-label">Estado</span>
+        ${estadoHtml}
+      </div>
+
+      <div class="instructor-label" style="margin-bottom:6px">Notas</div>
+      ${notasHtml}
+
+      ${actionsHtml}
+      ${reservaHtml}
+    </div>
+  `;
+}
+
+/* =========================================================
+   MODO EDICIÓN POR CARD
+   ========================================================= */
+function entrarEdicion(slotId) {
+  // Mostrar inputs, ocultar displays
+  const card = document.getElementById(`card-${slotId}`);
+
+  const dispInstr = document.getElementById(`disp-instr-${slotId}`);
+  const inpInstr  = document.getElementById(`inp-instr-${slotId}`);
+  const dispCupos = document.getElementById(`disp-cupos-${slotId}`);
+  const inpCupos  = document.getElementById(`inp-cupos-max-${slotId}`);
+  const dispNotas = document.getElementById(`disp-notas-${slotId}`);
+  const inpNotas  = document.getElementById(`inp-notas-${slotId}`);
+  const btnSave   = document.getElementById(`btn-save-${slotId}`);
+
+  if (dispInstr) dispInstr.style.display = 'none';
+  if (inpInstr)  inpInstr.style.display = 'block';
+  if (dispCupos) dispCupos.style.display = 'none';
+  if (inpCupos)  inpCupos.style.display = 'block';
+  if (dispNotas) dispNotas.style.display = 'none';
+  if (inpNotas)  inpNotas.style.display = 'block';
+  if (btnSave)   btnSave.disabled = false;
+
+  // Escuchar cambios para habilitar guardar
+  [inpInstr, inpCupos, inpNotas].forEach(el => {
+    if (el) el.addEventListener('input', () => { if(btnSave) btnSave.disabled = false; }, { once: false });
+  });
+
+  if (inpInstr) inpInstr.focus();
+}
+
+/* =========================================================
+   TOGGLE ESTADO
+   ========================================================= */
+async function toggleEstado(slotId) {
+  if (!modoAdmin) return;
+  const d = horarioData[slotId];
+  const anterior = d.estado;
+  const nuevo = d.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
+  horarioData[slotId].estado = nuevo;
+
+  // Guardar solo el estado
+  try {
+    const res = await fetch(`${API}/horarios.php`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slot_id: slotId, campo: 'estado', valor: nuevo })
+    });
+    if (!res.ok) throw new Error();
+  } catch (e) {
+    horarioData[slotId].estado = anterior;
+    desactivarAdmin();
+    toast('Acceso administrador requerido para editar horarios', 'err');
+    return;
+  }
+
+  renderTodos();
+  toast(`Horario ${nuevo === 'ACTIVO' ? 'activado' : 'desactivado'}`, nuevo === 'ACTIVO' ? 'ok' : 'err');
+}
+
+/* =========================================================
+   GUARDAR HORARIO
+   ========================================================= */
+async function guardarHorario(slotId) {
+  const inpInstr = document.getElementById(`inp-instr-${slotId}`);
+  const inpCupos = document.getElementById(`inp-cupos-max-${slotId}`);
+  const inpNotas = document.getElementById(`inp-notas-${slotId}`);
+  const btnSave  = document.getElementById(`btn-save-${slotId}`);
+
+  const instructor = inpInstr ? inpInstr.value.trim() : horarioData[slotId].instructor;
+  const cupos_max  = inpCupos ? parseInt(inpCupos.value) || 20 : horarioData[slotId].cupos_max;
+  const notas      = inpNotas ? inpNotas.value.trim() : horarioData[slotId].notas;
+
+  if (cupos_max < 1 || cupos_max > 200) {
+    toast('Los cupos deben estar entre 1 y 200', 'err');
+    return;
+  }
+
+  if (btnSave) { btnSave.disabled = true; btnSave.textContent = '⏳ Guardando...'; }
+
+  try {
+    const payload = {
+      accion: 'guardar',
+      slot_id: slotId,
+      instructor,
+      cupos_max,
+      notas,
+      estado: horarioData[slotId].estado
+    };
+    const res = await fetch(`${API}/horarios.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error();
+    toast('✓ Horario guardado correctamente');
+  } catch (e) {
+    if (btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Guardar'; }
+    desactivarAdmin();
+    toast('Acceso administrador requerido para guardar horarios', 'err');
+    return;
+  }
+
+  // Actualizar estado local
+  horarioData[slotId].instructor = instructor;
+  horarioData[slotId].cupos_max  = cupos_max;
+  horarioData[slotId].notas      = notas;
+
+  renderTodos();
+}
+
+/* =========================================================
+   RESERVA DE CUPO (AFILIADOS)
+   ========================================================= */
+async function reservarCupo(slotId) {
+  try {
+    const res = await fetch(`${API}/horarios.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'reservar', slot_id: slotId })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo apartar el cupo');
+
+    toast(data.mensaje || 'Cupo apartado correctamente');
+    await cargarHorarios();
+  } catch (e) {
+    toast(e.message || 'No se pudo apartar el cupo', 'err');
+  }
+}
+
+async function cancelarReserva() {
+  try {
+    const res = await fetch(`${API}/horarios.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'cancelar_reserva' })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo cancelar el cupo');
+
+    toast(data.mensaje || 'Reserva cancelada');
+    await cargarHorarios();
+  } catch (e) {
+    toast(e.message || 'No se pudo cancelar el cupo', 'err');
+  }
+}
+
+/* =========================================================
+   UTILS
+   ========================================================= */
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* =========================================================
+   ANIMACIÓN SHAKE (CSS inline para pin)
+   ========================================================= */
+const shakeStyle = document.createElement('style');
+shakeStyle.textContent = `
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-8px)}
+    40%{transform:translateX(8px)}
+    60%{transform:translateX(-6px)}
+    80%{transform:translateX(6px)}
+  }
+`;
+document.head.appendChild(shakeStyle);
+
+/* =========================================================
+   INIT
+   ========================================================= */
+document.addEventListener('DOMContentLoaded', () => {
+  rolUsuario = sessionStorage.getItem('ab_usuario_rol') || 'ADMIN';
+  // Mostrar nombre del admin si está en sessionStorage
+  const nombre = sessionStorage.getItem('ab_admin_nombre') || '';
+  if (nombre) document.getElementById('adminNombre').textContent = nombre;
+  if (rolUsuario === 'AFILIADO') {
+    document.getElementById('btnModoAdmin').style.display = 'none';
+  }
+
+  cargarHorarios();
+});
+</script>
+</body>
+</html>
