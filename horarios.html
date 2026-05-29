@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
   <script src="auth_guard.js"></script>
+  <script src="js/constants.js"></script>
+  <script src="js/shared-utils.js"></script>
+  <script src="js/api-utils.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ANUBIS BOX – Horarios</title>
@@ -397,26 +400,9 @@ let rolUsuario = sessionStorage.getItem('ab_usuario_rol') || 'ADMIN';
 let horarioData = {}; // { id: { instructor, cupos, cupos_max, estado, notas } }
 
 /* =========================================================
-   SIDEBAR
+   SIDEBAR Y TOAST - Ahora usando shared-utils.js
    ========================================================= */
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebarOverlay').classList.toggle('show');
-}
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('show');
-}
-
-/* =========================================================
-   TOAST
-   ========================================================= */
-function toast(msg, tipo = 'ok') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast ${tipo} show`;
-  setTimeout(() => t.classList.remove('show'), 3500);
-}
+// toggleSidebar(), closeSidebar(), toast() definidos en shared-utils.js
 
 /* =========================================================
    MODAL PIN ADMIN

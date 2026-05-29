@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
   <script src="auth_guard.js"></script>
+  <script src="js/constants.js"></script>
+  <script src="js/shared-utils.js"></script>
+  <script src="js/api-utils.js"></script>
   <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ANUBIS BOX – Planes</title>
@@ -259,20 +262,10 @@
       }
     }
 
-    function toggleSidebar() {
-      const sb = document.getElementById('sidebar');
-      const ov = document.getElementById('sidebarOverlay');
-      sb.classList.toggle('open');
-      ov.classList.toggle('show');
-    }
-    function closeSidebar() {
-      const sb = document.getElementById('sidebar');
-      const ov = document.getElementById('sidebarOverlay');
-      sb.classList.remove('open');
-      ov.classList.remove('show');
-    }
+    /* Funciones toggleSidebar() y closeSidebar() ahora en shared-utils.js */
+
     document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('#sidebar a').forEach(a => a.addEventListener('click', closeSidebar));
+      // Event listeners para sidebar se inicializan automáticamente en shared-utils.js
     });
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {

@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ANUBIS BOX – Tienda</title>
     <script src="auth_guard.js"></script>
+    <script src="js/constants.js"></script>
+    <script src="js/shared-utils.js"></script>
+    <script src="js/api-utils.js"></script>
     <link rel="icon" type="image/png" href="assets/logo.png">
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
@@ -423,12 +426,8 @@
     let productosCache = [];
     let metodoPagoVenta = 'EFECTIVO';
 
-    function toast(msg, tipo = 'ok') {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.className = `toast ${tipo} show`;
-        setTimeout(() => t.classList.remove('show'), 3400);
-    }
+    /* ── TOAST ── Ahora usando shared-utils.js */
+    // toast() función definida en shared-utils.js
 
     async function cargarProductos() {
         try {
@@ -991,19 +990,8 @@
         }));
     });
 
-    // Funciones de sidebar (por si acaso)
-    function toggleSidebar() {
-        const sb = document.getElementById('sidebar');
-        const ov = document.getElementById('sidebarOverlay');
-        const opened = sb.classList.toggle('open');
-        ov.classList.toggle('show', opened);
-    }
-    function closeSidebar() {
-        const sb = document.getElementById('sidebar');
-        const ov = document.getElementById('sidebarOverlay');
-        sb.classList.remove('open');
-        ov.classList.remove('show');
-    }
+    /* Funciones toggleSidebar() y closeSidebar() ahora en shared-utils.js */
+    // Los event listeners para sidebar se inicializan automáticamente en shared-utils.js
 </script>
 </body>
 </html>

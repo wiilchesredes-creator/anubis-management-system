@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
   <script src="auth_guard.js"></script>
+  <script src="js/constants.js"></script>
+  <script src="js/shared-utils.js"></script>
+  <script src="js/api-utils.js"></script>
   <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ANUBIS BOX – Clientes</title>
@@ -416,13 +419,8 @@
     let clientesData = [];
     let ingresosMap = {};
 
-    /* ── TOAST ── */
-    function toast(msg, tipo = 'ok') {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.className = `toast ${tipo} show`;
-      setTimeout(() => t.classList.remove('show'), 3500);
-    }
+    /* ── TOAST ── Ahora usando shared-utils.js */
+    // toast() función definida en shared-utils.js
 
     /* ── VALIDACIÓN ── */
     function validar(ids) {
@@ -1012,27 +1010,8 @@
 
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarModal(); cerrarInfo(); closeSidebar(); } });
 
-    function toggleSidebar() {
-      const sb = document.getElementById('sidebar');
-      const ov = document.getElementById('sidebarOverlay');
-      const btn = document.getElementById('menuToggle');
-      const opened = sb.classList.toggle('open');
-      ov.classList.toggle('show', opened);
-      btn.classList.toggle('open', opened);
-    }
-    function closeSidebar() {
-      const sb = document.getElementById('sidebar');
-      const ov = document.getElementById('sidebarOverlay');
-      const btn = document.getElementById('menuToggle');
-      sb.classList.remove('open');
-      ov.classList.remove('show');
-      btn && btn.classList.remove('open');
-    }
-    // Cerrar sidebar al hacer click en un enlace del mismo
-    document.addEventListener('DOMContentLoaded', () => {
-      const sb = document.getElementById('sidebar');
-      if (sb) sb.querySelectorAll('a').forEach(a=>a.addEventListener('click', closeSidebar));
-    });
+    /* Funciones toggleSidebar() y closeSidebar() ahora en shared-utils.js */
+    // Los event listeners para sidebar se inicializan automáticamente en shared-utils.js
 
     cargarPlanes();
     actualizarCreditosAutomaticos().finally(() => {

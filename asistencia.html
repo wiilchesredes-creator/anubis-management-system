@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
   <script src="auth_guard.js"></script>
+  <script src="js/constants.js"></script>
+  <script src="js/shared-utils.js"></script>
+  <script src="js/api-utils.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ANUBIS BOX – Registro de asistencia</title>
@@ -425,17 +428,10 @@
     cargarHistorial();
   }
 
-  /* ── SIDEBAR ── */
-  function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('sidebarOverlay').classList.toggle('show');
-  }
-  function closeSidebar() {
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('sidebarOverlay').classList.remove('show');
-  }
+  /* ── SIDEBAR ── Funciones ahora en shared-utils.js */
+  // toggleSidebar() y closeSidebar() definidas en shared-utils.js
   document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('#sidebar a').forEach(a => a.addEventListener('click', closeSidebar));
+    // Event listeners para sidebar se inicializan automáticamente en shared-utils.js
   });
 </script>
 </body>
