@@ -378,28 +378,67 @@ function cerrarSession() {
  * Inicia los event listeners comunes
  */
 function inicializarEventosComunes() {
-    // Toggle sidebar
+    // Esperar a que todos los elementos estén disponibles
+    if (document.readyState === 'loading') {
+        console.warn('[shared-utils] DOM aún cargando, esperando DOMContentLoaded');
+        return;
+    }
+
+    console.log('[shared-utils] Inicializando event listeners');
+
+    // Toggle sidebar - botón menú
     const menuToggle = document.getElementById('menuToggle');
     if (menuToggle) {
-        menuToggle.addEventListener('click', toggleSidebar);
+        menuToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSidebar();
+        });
+        console.log('[shared-utils] ✓ menuToggle inicializado');
+    } else {
+        console.warn('[shared-utils] ✗ menuToggle no encontrado');
     }
     
     // Cerrar sidebar al hacer click en overlay
     const sidebarOverlay = document.getElementById('sidebarOverlay');
     if (sidebarOverlay) {
-        sidebarOverlay.addEventListener('click', closeSidebarOnOverlayClick);
+        sidebarOverlay.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSidebar();
+            }
+        });
+        console.log('[shared-utils] ✓ sidebarOverlay inicializado');
+    } else {
+        console.warn('[shared-utils] ✗ sidebarOverlay no encontrado');
     }
     
-    // Cerrar sidebar al hacer click en un enlace
-    const sidebarLinks = document.querySelectorAll('.sidebar a');
-    sidebarLinks.forEach(link => {
-        link.addEventListener('click', closeSidebar);
+    // Cerrar sidebar al hacer click en un enlace de navegación
+    const sidebarLinks = document.querySelectorAll('.sidebar a, aside a');
+    if (sidebarLinks.length > 0) {
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                closeSidebar();
+            });
+        });
+        console.log(`[shared-utils] ✓ ${sidebarLinks.length} enlaces del sidebar inicializados`);
+    }
+
+    // Cerrar sidebar con tecla Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeSidebar();
+        }
     });
+    console.log('[shared-utils] ✓ Evento Escape inicializado');
 }
 
-// Inicializar cuando el DOM esté listo
+// Inicializar cuando el DOM esté completamente listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', inicializarEventosComunes);
+} else if (document.readyState === 'interactive') {
+    // Si estamos en interactive, esperar a complete
+    setTimeout(inicializarEventosComunes, 100);
 } else {
+    // DOM ya está completo
     inicializarEventosComunes();
 }
