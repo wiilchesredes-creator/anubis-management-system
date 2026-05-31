@@ -557,27 +557,60 @@
     /* ── CLIENTES ── */
     async function cargarClientes() {
       try {
-        const data  = await (await fetch(`${API}/clientes.php`)).json();
+        console.log('[cargarClientes] Iniciando carga...');
+        const response = await fetch(`${API}/clientes.php`);
+        if (!response.ok) {
+          console.error('[cargarClientes] Error HTTP:', response.status);
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('[cargarClientes] Datos recibidos:', data.length, 'clientes');
+        
         const tbody = document.getElementById('tabla');
+        if (!tbody) {
+          console.error('[cargarClientes] Elemento tabla no encontrado');
+          return;
+        }
+        
         clientesData = data.sort((a, b) => a.id - b.id);
+        
         // Para cada cliente buscar su último método de pago
-        const ingresos = await (await fetch(`${API}/ingresos.php?todos=1`)).json();
-        ingresosMap = {};
-        ingresos.forEach(i => {
-          if (i.id_cliente && !ingresosMap[i.id_cliente]) ingresosMap[i.id_cliente] = i.metodo_pago;
-        });
+        const ingresosResponse = await fetch(`${API}/ingresos.php?todos=1`);
+        if (!ingresosResponse.ok) {
+          console.error('[cargarClientes] Error cargando ingresos:', ingresosResponse.status);
+        } else {
+          const ingresos = await ingresosResponse.json();
+          ingresosMap = {};
+          ingresos.forEach(i => {
+            if (i.id_cliente && !ingresosMap[i.id_cliente]) ingresosMap[i.id_cliente] = i.metodo_pago;
+          });
+          console.log('[cargarClientes] Ingresos cargados, map:', Object.keys(ingresosMap).length, 'clientes con ingreso');
+        }
 
         renderClientes(clientesData);
-      } catch(e) { console.error(e); }
+        console.log('[cargarClientes] ✓ Tabla renderizada');
+      } catch(e) { 
+        console.error('[cargarClientes] Error:', e);
+        const tbody = document.getElementById('tabla');
+        if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="7" class="empty" style="color:#f87171">Error al cargar clientes. Abre desde http://localhost/anubisbox/</td></tr>';
+        }
+      }
     }
 
     function renderClientes(data) {
+      console.log('[renderClientes] Renderizando', data.length, 'clientes');
       const tbody = document.getElementById('tabla');
-      if (!data.length) {
+      if (!tbody) {
+        console.error('[renderClientes] Elemento tabla no encontrado');
+        return;
+      }
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        console.log('[renderClientes] Sin datos, mostrando mensaje vacío');
         tbody.innerHTML = '<tr><td colspan="7" class="empty">Sin clientes registrados aún</td></tr>';
         return;
       }
-      tbody.innerHTML = data.map(c => {
+      tbody.innerHTML = data.map((c, idx) => {
           const metodo = ingresosMap[c.id] || '—';
           const edadCliente = calcularEdad(c.fecha_nacimiento);
           const parejaVisible = c.plan_nombre && c.plan_nombre.trim().toUpperCase().includes('PAREJA');
@@ -586,6 +619,9 @@
           const creditosTexto = c.plan_creditos_mes && c.plan_creditos_mes > 0
             ? `${Number(c.creditos_usados || 0)}/${Number(c.plan_creditos_mes)}<div style="font-size:11px;color:#aaa">${faltantes} restantes</div>`
             : '—';
+          
+          if (idx === 0) console.log('[renderClientes] Cliente 0:', c);
+          
           return `
             <tr${rowClass}>
               <td><strong>${c.nombre}</strong></td>
@@ -604,6 +640,7 @@
               <td><button class="detalle-toggle info" onclick="abrirInfo(${c.id})">Info</button></td>
             </tr>`;
         }).join('');
+      console.log('[renderClientes] ✓ Tabla actualizada con', data.length, 'filas');
     }
 
     function filtrarClientes() {
@@ -666,6 +703,8 @@
           metodoPagoSeleccionado = '';
           const registro = data.solo_ingreso ? 'Ingreso registrado' : 'Cliente registrado';
           toast(`✓ ${registro} — $${Number(data.monto_ingreso).toLocaleString('es-CO')} via ${data.metodo_pago}`);
+          console.log('[registrarCliente] ✓ Registro exitoso, cerrando modal y recargando tabla');
+          cerrarModal(); // ← AQUÍ: Cerrar el modal después de registrar
           cargarClientes();
           cargarAlertas();
         } else {
