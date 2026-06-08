@@ -1,0 +1,35 @@
+# WhatsApp Bot - Git Ignore
+
+# Dependencias
+node_modules/
+package-lock.json
+yarn.lock
+
+# Sesión de WhatsApp (IMPORTANTE: NO subir a GitHub)
+.wwebjs_auth/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Variables de entorno
+.env.local
+.env.*.local
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Compilados
+dist/
+build/
