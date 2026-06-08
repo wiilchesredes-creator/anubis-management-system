@@ -16,6 +16,7 @@ const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const puppeteer = require('puppeteer');
 require('dotenv').config();
 
 const app = express();
@@ -34,59 +35,109 @@ const sessionDir = path.join(__dirname, '.wwebjs_auth');
 console.log(`🤖 AnubisBox WhatsApp Bot v1.0`);
 console.log(`📁 Session directory: ${sessionDir}`);
 
+// Función para obtener ruta de Chrome instalado por Puppeteer
+async function getChromeExecutablePath() {
+  try {
+    // Intentar usar el Chrome instalado por Puppeteer
+    const executablePath = await puppeteer.executablePath();
+    if (fs.existsSync(executablePath)) {
+      console.log(`✅ Chrome encontrado en: ${executablePath}`);
+      return executablePath;
+    }
+  } catch (e) {
+    console.log('⚠️ Chrome de Puppeteer no encontrado');
+  }
+  
+  // Alternativas (Chrome/Edge del sistema)
+  const chromeAlternatives = [
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+  ];
+  
+  for (const chromePath of chromeAlternatives) {
+    if (fs.existsSync(chromePath)) {
+      console.log(`✅ Navegador encontrado en: ${chromePath}`);
+      return chromePath;
+    }
+  }
+  
+  return null; // Dejar que Puppeteer lo busque
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // ▶ INICIALIZAR CLIENTE DE WHATSAPP
 // ═══════════════════════════════════════════════════════════════════
 
-function initializeWhatsApp() {
+async function initializeWhatsApp() {
   console.log('🔄 Inicializando cliente de WhatsApp...');
-
-  client = new Client({
-    authStrategy: new LocalAuth({
-      clientId: 'anubisbox-client'
-    }),
-    puppeteer: {
-      headless: false, // Mostrar navegador para ver QR
-      args: ['--no-sandbox']
-    }
-  });
-
-  // Evento: QR Code (solo aparece si es primera vez)
-  client.on('qr', (qr) => {
-    console.log('\n');
-    console.log('╔════════════════════════════════════════╗');
-    console.log('║  📱 ESCANEA ESTE CÓDIGO QR            ║');
-    console.log('║  Con tu teléfono (WhatsApp)            ║');
-    console.log('╚════════════════════════════════════════╝');
-    console.log('\n');
-    qrcode.generate(qr, { small: true });
-    console.log('\n');
-  });
-
-  // Evento: Cliente listo
-  client.on('ready', () => {
-    isClientReady = true;
-    console.log('✅ ¡Cliente de WhatsApp listo!');
-    console.log('🔐 Sesión guardada - no necesitará rescannear');
-    console.log(`🌐 API disponible en http://localhost:${PORT}`);
+  
+  try {
+    const chromeExecutablePath = await getChromeExecutablePath();
     
-    // Iniciar verificación automática de clientes vencidos
-    startAutoNotifications();
-  });
+    const puppeteerOptions = {
+      headless: false, // Mostrar navegador para ver QR
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    };
+    
+    if (chromeExecutablePath) {
+      puppeteerOptions.executablePath = chromeExecutablePath;
+    }
 
-  // Evento: Desconexión
-  client.on('disconnected', () => {
-    isClientReady = false;
-    console.log('❌ Cliente desconectado');
-  });
+    client = new Client({
+      authStrategy: new LocalAuth({
+        clientId: 'anubisbox-client'
+      }),
+      puppeteer: puppeteerOptions
+    });
 
-  // Evento: Error
-  client.on('error', (error) => {
-    console.error('⚠️ Error en cliente:', error);
-  });
+    // Evento: QR Code (solo aparece si es primera vez)
+    client.on('qr', (qr) => {
+      console.log('\n');
+      console.log('╔════════════════════════════════════════╗');
+      console.log('║  📱 ESCANEA ESTE CÓDIGO QR            ║');
+      console.log('║  Con tu teléfono (WhatsApp)            ║');
+      console.log('╚════════════════════════════════════════╝');
+      console.log('\n');
+      qrcode.generate(qr, { small: true });
+      console.log('\n');
+    });
 
-  // Iniciar cliente
-  client.initialize();
+    // Evento: Cliente listo
+    client.on('ready', () => {
+      isClientReady = true;
+      console.log('✅ ¡Cliente de WhatsApp listo!');
+      console.log('🔐 Sesión guardada - no necesitará rescannear');
+      console.log(`🌐 API disponible en http://localhost:${PORT}`);
+      
+      // Iniciar verificación automática de clientes vencidos
+      startAutoNotifications();
+    });
+
+    // Evento: Desconexión
+    client.on('disconnected', () => {
+      isClientReady = false;
+      console.log('❌ Cliente desconectado');
+    });
+
+    // Evento: Error
+    client.on('error', (error) => {
+      console.error('⚠️ Error en cliente:', error);
+    });
+
+    // Iniciar cliente
+    await client.initialize();
+    
+  } catch (error) {
+    console.error('❌ Error fatal al inicializar WhatsApp:');
+    console.error(error.message);
+    console.log('\n💡 Soluciones:');
+    console.log('1. Ejecuta: npx puppeteer browsers install chrome@stable');
+    console.log('2. O instala Chrome manualmente desde: https://google.com/chrome');
+    console.log('3. O instala Microsoft Edge desde: https://microsoft.com/edge');
+    process.exit(1);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -274,7 +325,10 @@ app.listen(PORT, () => {
 });
 
 // Inicializar WhatsApp
-initializeWhatsApp();
+initializeWhatsApp().catch(error => {
+  console.error('Error fatal:', error);
+  process.exit(1);
+});
 
 // Manejo de errores global
 process.on('unhandledRejection', (reason, promise) => {
