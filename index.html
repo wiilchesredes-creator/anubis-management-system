@@ -462,6 +462,44 @@
       return diff === 0 ? 'Hoy' : `${diff} día${diff === 1 ? '' : 's'}`;
     }
 
+    /**
+     * Calcula días laborales (lunes-sábado, sin domingos) entre dos fechas.
+     * @param {string} fechaInicio - Fecha en formato YYYY-MM-DD
+     * @param {string} fechaFinal - Fecha en formato YYYY-MM-DD
+     * @returns {number} Número de días laborales
+     */
+    function contarDiasLaborales(fechaInicio, fechaFinal) {
+      const inicio = new Date(fechaInicio + 'T00:00:00');
+      const final = new Date(fechaFinal + 'T00:00:00');
+      let count = 0;
+      
+      for (let d = new Date(inicio); d <= final; d.setDate(d.getDate() + 1)) {
+        const dayOfWeek = d.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+        if (dayOfWeek !== 0) { // Si no es domingo
+          count++;
+        }
+      }
+      return count;
+    }
+
+    /**
+     * Calcula días laborales restantes para planes basados en días.
+     * El período es de 30 días laborales desde fecha_inicio.
+     * @param {string} fechaInicio - Fecha de inscripción en formato YYYY-MM-DD
+     * @returns {object} { diasUsados, diasRestantes, vencido }
+     */
+    function calcularDiasBasadoEnPlan(fechaInicio) {
+      const hoy = new Date();
+      const fechaHoy = new Date(hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0'));
+      const fechaHoyStr = fechaHoy.toISOString().split('T')[0];
+      
+      const diasUsados = contarDiasLaborales(fechaInicio, fechaHoyStr);
+      const diasRestantes = Math.max(0, 30 - diasUsados);
+      const vencido = diasRestantes === 0 && diasUsados >= 30;
+      
+      return { diasUsados, diasRestantes, vencido };
+    }
+
     /* ── SELECTOR MÉTODO PAGO (REGISTRO) ── */
     function seleccionarMetodo(metodo) {
       metodoPagoSeleccionado = metodo;
@@ -614,11 +652,35 @@
           const metodo = ingresosMap[c.id] || '—';
           const edadCliente = calcularEdad(c.fecha_nacimiento);
           const parejaVisible = c.plan_nombre && c.plan_nombre.trim().toUpperCase().includes('PAREJA');
-          const faltantes = c.plan_creditos_mes && c.plan_creditos_mes > 0 ? Math.max(Number(c.plan_creditos_mes) - Number(c.creditos_usados || 0), 0) : null;
-          const rowClass = faltantes !== null && faltantes < 5 ? ' class="fila-creditos-bajos"' : '';
-          const creditosTexto = c.plan_creditos_mes && c.plan_creditos_mes > 0
-            ? `${Number(c.creditos_usados || 0)}/${Number(c.plan_creditos_mes)}<div style="font-size:11px;color:#aaa">${faltantes} restantes</div>`
-            : '—';
+          
+          // ── DETECTAR SI ES PLAN BASADO EN DÍAS (FULL/PAREJA) ──
+          const esBasadoEnDias = c.basado_en_dias === 1 || c.basado_en_dias === '1';
+          
+          let creditosTexto, rowClass;
+          
+          if (esBasadoEnDias && c.fecha_inicio) {
+            // PLAN BASADO EN DÍAS: mostrar días restantes
+            const { diasUsados, diasRestantes, vencido } = calcularDiasBasadoEnPlan(c.fecha_inicio);
+            
+            if (vencido) {
+              creditosTexto = `<span style="color:#f87171;font-weight:700">VENCIDO</span>`;
+              rowClass = ' class="fila-creditos-bajos"';
+            } else if (diasRestantes <= 8) {
+              // Alerta a 8 días o menos
+              creditosTexto = `${diasUsados}/30 días<div style="font-size:11px;color:#facc15">⚠️ ${diasRestantes} día${diasRestantes === 1 ? '' : 's'} restantes</div>`;
+              rowClass = ' class="fila-creditos-bajos"';
+            } else {
+              creditosTexto = `${diasUsados}/30 días<div style="font-size:11px;color:#4ade80">${diasRestantes} día${diasRestantes === 1 ? '' : 's'} restantes</div>`;
+              rowClass = '';
+            }
+          } else {
+            // PLAN BASADO EN CRÉDITOS: mostrar créditos restantes
+            const faltantes = c.plan_creditos_mes && c.plan_creditos_mes > 0 ? Math.max(Number(c.plan_creditos_mes) - Number(c.creditos_usados || 0), 0) : null;
+            rowClass = faltantes !== null && faltantes < 5 ? ' class="fila-creditos-bajos"' : '';
+            creditosTexto = c.plan_creditos_mes && c.plan_creditos_mes > 0
+              ? `${Number(c.creditos_usados || 0)}/${Number(c.plan_creditos_mes)}<div style="font-size:11px;color:#aaa">${faltantes} restantes</div>`
+              : '—';
+          }
           
           if (idx === 0) console.log('[renderClientes] Cliente 0:', c);
           

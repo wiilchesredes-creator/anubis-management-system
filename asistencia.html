@@ -261,7 +261,10 @@
       const data = await res.json();
 
       if (res.ok) {
-        if (data.creditos_descontados) {
+        if (data.plan_tipo === 'basado_en_dias') {
+          mostrarResultadoDias(data);
+          agregarHistorial();
+        } else if (data.creditos_descontados) {
           mostrarResultado(data, 'ok');
           agregarHistorial();
         } else {
@@ -333,16 +336,45 @@
       </div>`;
   }
 
+  /* ── RESULTADO PLAN BASADO EN DÍAS (FULL / PAREJA) ── */
+  function mostrarResultadoDias(data) {
+    const colorDias = data.dias_restantes > 10 ? '#4ade80' : data.dias_restantes > 5 ? '#facc15' : '#f87171';
+    const alertaDias = data.alerta_5_dias
+      ? `<div style="text-align:center;margin-top:12px;padding:12px;background:rgba(250,204,21,.1);border:1px solid #facc15;border-radius:8px;font-size:13px;color:#facc15">⏰ ${data.dias_restantes} días restantes - Renueva pronto</div>`
+      : '';
+
+    document.getElementById('resultado').style.display = 'block';
+    document.getElementById('resultado').innerHTML = `
+      <div class="res-card ok">
+        <span class="res-icono">📅</span>
+        <div class="res-nombre">${data.nombre}</div>
+        <div class="res-plan">${data.plan_nombre}</div>
+        <div class="res-mensaje">¡Bienvenido! Acceso permitido</div>
+        <div class="creditos-wrap">
+          <div class="creditos-info">
+            <span class="creditos-lbl">Días disponibles</span>
+            <span class="creditos-nums" style="color:${colorDias}"><strong>${data.dias_restantes}</strong> días</span>
+          </div>
+          <div class="creditos-restantes" style="color:${colorDias}">
+            Te quedan <strong>${data.dias_restantes}</strong> día${data.dias_restantes !== 1 ? 's' : ''} en tu plan
+          </div>
+        </div>
+        ${alertaDias}
+        ${autoResetHTML()}
+      </div>`;
+  }
+
   /* ── MOSTRAR ERROR ── */
   function mostrarError(mensaje, tipo, cedula) {
     const iconos = {
       inactivo:    '⛔',
       vencido:     '📅',
       sin_creditos:'💳',
+      plan_vencido:'⏳',
       conexion:    '📡',
     };
     const icono = iconos[tipo] || '❌';
-    const clase = tipo === 'sin_creditos' ? 'warn' : 'err';
+    const clase = tipo === 'sin_creditos' || tipo === 'plan_vencido' ? 'warn' : 'err';
 
     document.getElementById('resultado').style.display = 'block';
     document.getElementById('resultado').innerHTML = `

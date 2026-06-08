@@ -70,7 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $pdo->prepare("
         SELECT c.id, c.nombre, c.cedula, c.estado, c.fecha_fin,
                c.creditos_usados, c.acompanante_cedula, c.acompanante_nombre,
-               p.creditos_mes, p.nombre AS plan_nombre
+               c.dias_usados, c.fecha_inicio, c.notificacion_5_dias,
+               p.creditos_mes, p.nombre AS plan_nombre, p.basado_en_dias
         FROM clientes c
         JOIN planes p ON c.id_plan = p.id
         WHERE c.cedula = :cedula OR c.acompanante_cedula = :cedula2
@@ -140,7 +141,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $creditosMax    = (int) $cliente['creditos_mes'];
     $creditosUsados = (int) $cliente['creditos_usados'];
 
-    // Plan sin límite
+    // ── PLANES BASADOS EN DÍAS (FULL Y PAREJA) ──
+    if ((int)$cliente['basado_en_dias'] === 1) {
+        // Verificar si aún tiene días disponibles
+        $fechaInicio = new DateTime($cliente['fecha_inicio']);
+        $fechaHoy = new DateTime($hoy);
+        
+        // Contar días laborales (sin domingos) desde la fecha de inicio
+        $diasUsados = 0;
+        $cursor = clone $fechaInicio;
+        while ($cursor <= $fechaHoy) {
+            $dayOfWeek = (int)$cursor->format('N'); // 1=Monday ... 7=Sunday
+            if ($dayOfWeek <= 6) {
+                $diasUsados++;
+            }
+            $cursor->modify('+1 day');
+        }
+
+        $diasRestantes = 30 - $diasUsados;
+
+        if ($diasRestantes <= 0) {
+            // Plan vencido - cambiar a INACTIVO
+            $pdo->prepare("UPDATE clientes SET estado = 'INACTIVO' WHERE id = :id")->execute([':id' => $cliente['id']]);
+            $guardarRegistro($nombreMostrar, $cliente['plan_nombre'], 'err', 'Plan vencido (30 días agotados)', $cliente['id']);
+            http_response_code(403);
+            echo json_encode(['error' => 'Tu plan de 30 días ha vencido. Debes renovar.', 'tipo' => 'plan_vencido']);
+            exit;
+        }
+
+        // Permitir acceso y guardar registro
+        $guardarRegistro($nombreMostrar, $cliente['plan_nombre'], 'libre', "Acceso por días. Días restantes: $diasRestantes", $cliente['id']);
+
+        // Si faltan 5 días y no se ha notificado, notificar
+        $tieneAlerta = false;
+        if ($diasRestantes === 5 && (int)$cliente['notificacion_5_dias'] === 0) {
+            $pdo->prepare("UPDATE clientes SET notificacion_5_dias = 1 WHERE id = :id")->execute([':id' => $cliente['id']]);
+            $tieneAlerta = true;
+        }
+
+        echo json_encode([
+            'ok'                  => true,
+            'nombre'              => $nombreMostrar,
+            'plan_nombre'         => $cliente['plan_nombre'],
+            'creditos_descontados'=> false,
+            'plan_tipo'           => 'basado_en_dias',
+            'dias_restantes'      => $diasRestantes,
+            'alerta_5_dias'       => $tieneAlerta,
+            'mensaje'             => $tieneAlerta 
+                ? "¡Alerta! Te quedan $diasRestantes días en tu plan. Renueva pronto."
+                : "Acceso permitido. Te quedan $diasRestantes días en tu plan.",
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // ── PLANES BASADOS EN CRÉDITOS (AVANZADO, INTERMEDIO, ETC) ──
     if ($creditosMax === 0) {
         $guardarRegistro($nombreMostrar, $cliente['plan_nombre'], 'libre', 'Acceso libre', $cliente['id']);
         echo json_encode([

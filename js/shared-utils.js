@@ -157,15 +157,6 @@ function formatearMoneda(cantidad) {
 }
 
 /**
- * Acortado: formatea moneda sin símbolo
- * @param {number} n - Cantidad
- * @returns {string} Número formateado
- */
-function peso(n) {
-    return Number(n).toLocaleString('es-CO');
-}
-
-/**
  * Calcula edad a partir de fecha de nacimiento
  * @param {string} fechaNacimiento - Fecha en formato YYYY-MM-DD
  * @returns {number} Edad en años

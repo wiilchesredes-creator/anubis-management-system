@@ -22,14 +22,57 @@ header('Access-Control-Allow-Methods: GET');
 $pdo = conectar();
 
 // Migración de columnas (se mantiene por seguridad durante la transición)
-$colControl = $pdo->query("SHOW COLUMNS FROM clientes LIKE 'fecha_creditos_actualizados'")->fetch(PDO::FETCH_ASSOC);
-if (!$colControl) {
-    $pdo->exec("ALTER TABLE clientes ADD COLUMN fecha_creditos_actualizados DATE DEFAULT NULL");
+try {
+    $colControl = $pdo->query("SHOW COLUMNS FROM clientes LIKE 'fecha_creditos_actualizados'")->fetch(PDO::FETCH_ASSOC);
+    if (!$colControl) {
+        $pdo->exec("ALTER TABLE clientes ADD COLUMN fecha_creditos_actualizados DATE DEFAULT NULL");
+    }
+} catch (Exception $e) {
+    // Ignorar error si la columna ya existe o tabla tiene otros problemas
 }
-$colInactivo = $pdo->query("SHOW COLUMNS FROM clientes LIKE 'fecha_inactivo'")->fetch(PDO::FETCH_ASSOC);
-if (!$colInactivo) {
-    $pdo->exec("ALTER TABLE clientes ADD COLUMN fecha_inactivo DATE DEFAULT NULL");
+
+try {
+    $colInactivo = $pdo->query("SHOW COLUMNS FROM clientes LIKE 'fecha_inactivo'")->fetch(PDO::FETCH_ASSOC);
+    if (!$colInactivo) {
+        $pdo->exec("ALTER TABLE clientes ADD COLUMN fecha_inactivo DATE DEFAULT NULL");
+    }
+} catch (Exception $e) {
+    // Ignorar error
 }
+
+// ── NUEVAS COLUMNAS PARA PLANES BASADOS EN DÍAS ──
+try {
+    $colDiasUsados = $pdo->query("SHOW COLUMNS FROM clientes LIKE 'dias_usados'")->fetch(PDO::FETCH_ASSOC);
+    if (!$colDiasUsados) {
+        $pdo->exec("ALTER TABLE clientes ADD COLUMN dias_usados INT DEFAULT 0");
+    }
+} catch (Exception $e) {
+    // Ignorar si ya existe
+}
+
+try {
+    $colNotificacion = $pdo->query("SHOW COLUMNS FROM clientes LIKE 'notificacion_5_dias'")->fetch(PDO::FETCH_ASSOC);
+    if (!$colNotificacion) {
+        $pdo->exec("ALTER TABLE clientes ADD COLUMN notificacion_5_dias TINYINT DEFAULT 0");
+    }
+} catch (Exception $e) {
+    // Ignorar si ya existe
+}
+
+// ── NUEVAS COLUMNAS EN TABLA DE PLANES ──
+try {
+    $colBasadoDias = $pdo->query("SHOW COLUMNS FROM planes LIKE 'basado_en_dias'")->fetch(PDO::FETCH_ASSOC);
+    if (!$colBasadoDias) {
+        $pdo->exec("ALTER TABLE planes ADD COLUMN basado_en_dias TINYINT DEFAULT 0");
+        
+        // Marcar FULL y PAREJA como planes basados en días
+        $pdo->exec("UPDATE planes SET basado_en_dias = 1 WHERE UPPER(nombre) LIKE '%FULL%'");
+        $pdo->exec("UPDATE planes SET basado_en_dias = 1 WHERE UPPER(nombre) LIKE '%PAREJA%'");
+    }
+} catch (Exception $e) {
+    // Ignorar si ya existe o hay error
+}
+
 
 // Cargar la nueva arquitectura OOP
 $autoloaderLoaded = false;
@@ -53,12 +96,25 @@ if (!$autoloaderLoaded) {
 
 use AnubisBox\Repositories\ClientRepository;
 use AnubisBox\Services\CreditService;
+use AnubisBox\Services\DayBasedPlanService;
 
 try {
     $repo = new ClientRepository($pdo);
-    $service = new CreditService($repo);
+    $creditService = new CreditService($repo);
+    $dayService = new DayBasedPlanService($repo, $pdo);
 
-    $result = $service->processDailyCreditUpdate();
+    // Procesar créditos (planes AVANZADO, INTERMEDIO, etc)
+    $resultCredits = $creditService->processDailyCreditUpdate();
+    
+    // Procesar planes basados en días (FULL, PAREJA)
+    $resultDays = $dayService->processDayBasedPlans();
+
+    // Combinar resultados
+    $result = [
+        'ok' => true,
+        'creditos' => $resultCredits,
+        'dias' => $resultDays,
+    ];
 
     echo json_encode($result, JSON_UNESCAPED_UNICODE);
 

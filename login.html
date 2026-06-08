@@ -12,12 +12,45 @@
       font-family:'Segoe UI',sans-serif;
       background:#0f1117;
       color:#e0e0e0;
-      min-height:100vh;
+      min-height:100dvh;
       display:flex;
       align-items:center;
       justify-content:center;
       position:relative;
-      overflow:hidden;
+      overflow:auto;
+      padding: 20px 0;
+      padding-top: 68px; /* espacio para la barra superior */
+    }
+
+    /* En pantallas cortas: alinear arriba para que el botón de login siempre sea visible */
+    @media (max-height: 720px) {
+      body {
+        align-items: flex-start;
+        padding-top: 68px;
+      }
+      .login-logo img { height: 64px; margin-bottom: 8px; }
+      .login-logo h1 { font-size: 18px; margin-top: 6px; }
+      .login-logo p { font-size: 11px; }
+      .login-card { padding: 22px; }
+      .login-wrap { padding: 12px; }
+      .field { margin-bottom: 14px; }
+      .btn-login { padding: 11px; font-size: 14px; }
+    }
+
+    @media (max-height: 600px) {
+      .login-logo img { height: 52px; }
+      .login-card { padding: 18px; border-radius: 12px; }
+      .field { margin-bottom: 10px; }
+      .login-card h2 { margin-bottom: 16px; font-size: 12px; }
+      .login-topbar { height: 38px; }
+      .login-topbar img { height: 22px; }
+      .login-topbar span { font-size: 12px; }
+    }
+
+    /* En pantallas muy bajas ocultamos la barra superior para maximizar espacio */
+    @media (max-height: 520px) {
+      .login-topbar { display: none; }
+      body { padding-top: 20px; }
     }
 
     /* Fondo animado */
@@ -48,6 +81,31 @@
       position:relative;z-index:10;
       width:100%;max-width:420px;
       padding:24px;
+    }
+
+    /* Barra superior mínima (consistencia visual con el resto de la app) */
+    .login-topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 48px;
+      background: #1a1d27;
+      border-bottom: 1px solid #2a2d3a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      gap: 10px;
+    }
+    .login-topbar img {
+      height: 28px;
+    }
+    .login-topbar span {
+      color: #c9952a;
+      font-weight: 700;
+      letter-spacing: 1px;
+      font-size: 13px;
     }
 
     .login-logo{
@@ -214,6 +272,12 @@
 
 <div class="bg-grid"></div>
 <div class="bg-glow"></div>
+
+<!-- Barra superior mínima para consistencia visual con el resto de la aplicación -->
+<div class="login-topbar">
+  <img src="assets/logo.png" alt="ANUBIS BOX">
+  <span>ANUBIS BOX</span>
+</div>
 
 <div class="login-wrap">
   <div class="login-logo">

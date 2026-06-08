@@ -107,12 +107,50 @@ if ($metodo === 'GET') {
         echo json_encode($stmt->fetchAll(), JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $stmt = $pdo->query("
-        SELECT c.*, p.nombre AS plan_nombre, p.valor AS plan_valor, p.creditos_mes AS plan_creditos_mes
-        FROM clientes c
-        LEFT JOIN planes p ON c.id_plan = p.id
-        ORDER BY c.created_at DESC
-    ");
+    
+    // ── Notificaciones de planes basados en días (5 días restantes) ──
+    if (isset($_GET['notificacion_dias'])) {
+        try {
+            $stmt = $pdo->prepare("
+                SELECT 
+                    c.id, c.nombre, c.cedula, c.fecha_inicio, c.estado,
+                    p.nombre AS plan_nombre, 
+                    p.valor AS plan_valor
+                FROM clientes c
+                JOIN planes p ON c.id_plan = p.id
+                WHERE c.estado = 'ACTIVO'
+                  AND p.basado_en_dias = 1
+                  AND c.notificacion_5_dias = 1
+                ORDER BY c.fecha_inicio ASC
+            ");
+            $stmt->execute();
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            // Fallback si los campos no existen aún
+            $result = [];
+        }
+        echo json_encode($result, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    
+    // ── GET: Consulta principal de clientes (con manejo defensivo) ──
+    try {
+        $stmt = $pdo->query("
+            SELECT c.*, p.nombre AS plan_nombre, p.valor AS plan_valor, p.creditos_mes AS plan_creditos_mes, p.basado_en_dias
+            FROM clientes c
+            LEFT JOIN planes p ON c.id_plan = p.id
+            ORDER BY c.created_at DESC
+        ");
+    } catch (Exception $e) {
+        // Si el campo basado_en_dias no existe, usar fallback
+        $stmt = $pdo->query("
+            SELECT c.*, p.nombre AS plan_nombre, p.valor AS plan_valor, p.creditos_mes AS plan_creditos_mes, 0 AS basado_en_dias
+            FROM clientes c
+            LEFT JOIN planes p ON c.id_plan = p.id
+            ORDER BY c.created_at DESC
+        ");
+    }
+    
     echo json_encode($stmt->fetchAll(), JSON_UNESCAPED_UNICODE);
     exit;
 }

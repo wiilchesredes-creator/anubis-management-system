@@ -302,7 +302,7 @@ final class ClientRepository
     /**
      * Hydrate a raw database row into a Client entity.
      */
-    private function hydrate(array $row): Client
+    public function hydrate(array $row): Client
     {
         return new Client(
             id: (int)$row['id'],
@@ -327,5 +327,22 @@ final class ClientRepository
             acompananteCelular: $row['acompanante_celular'] ?? null,
             acompananteEps: $row['acompanante_eps'] ?? null,
         );
+    }
+
+    /**
+     * Update the status (estado) of a client.
+     * Used for marking clients as INACTIVO when day-based plan expires.
+     */
+    public function updateStatus(int $clientId, string $estado): bool
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE clientes 
+            SET estado = :estado
+            WHERE id = :id
+        ");
+        return $stmt->execute([
+            ':estado' => $estado,
+            ':id'    => $clientId,
+        ]);
     }
 }
