@@ -12,6 +12,7 @@
  *   src/Services/CreditService.php
  */
 
+require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/session_check.php';
 requireAdmin();
 

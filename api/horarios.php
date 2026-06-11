@@ -9,8 +9,6 @@
  * PUT campo=estado          → Actualiza solo el estado de un slot
  */
 
-session_name('ANUBISBOX_SESS');
-session_start();
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS');
@@ -21,14 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-/* ── Verificar sesión activa ── */
-if (empty($_SESSION['admin_id'])) {
-    http_response_code(401);
-    echo json_encode(['error' => 'No autenticado']);
-    exit;
-}
-
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/session_check.php';
+requireAdmin(); // verifica sesión + timeout de 30 min, igual que el resto de la API
 
 /* ── PIN de administrador (cámbialo aquí) ── */
 define('ADMIN_PIN', '1234');

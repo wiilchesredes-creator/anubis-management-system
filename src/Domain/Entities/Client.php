@@ -30,6 +30,11 @@ final class Client
         public readonly ?string $planNombre = null,
         public readonly ?float $planValor = null,
 
+        // Day-based plan support
+        public readonly int $diasUsados = 0,
+        public readonly int $notificacion5Dias = 0,
+        public readonly bool $basadoEnDias = false,
+
         // Pareja support
         public readonly ?string $acompananteNombre = null,
         public readonly ?string $acompananteCedula = null,
