@@ -313,35 +313,41 @@ if ($metodo === 'PUT') {
         $stmt->execute($params);
 
         // 2. Sincronizar cambios en el ingreso de inscripción si existe
-        $stmtVerificar = $pdo->prepare("SELECT id FROM ingresos WHERE id_cliente = :id_cliente LIMIT 1");
-        $stmtVerificar->execute([':id_cliente' => $id]);
-        $ingresoId = $stmtVerificar->fetchColumn();
+        // PERO: Solo cuando NO es una renovación (es decir, cuando no hay un concepto de "Renovación" en los datos)
+        // Las renovaciones registran su propio ingreso por separado en ingresos.php
+        $esRenovacion = !empty($datos['es_renovacion']);
+        
+        if (!$esRenovacion) {
+            $stmtVerificar = $pdo->prepare("SELECT id FROM ingresos WHERE id_cliente = :id_cliente LIMIT 1");
+            $stmtVerificar->execute([':id_cliente' => $id]);
+            $ingresoId = $stmtVerificar->fetchColumn();
 
-        if ($ingresoId) {
-            $sqlIngreso = "
-                UPDATE ingresos
-                SET concepto = CONCAT('Inscripción - ', :nombre),
-                    fecha    = :fecha_inicio";
-            
-            if (!empty($datos['metodo_pago'])) {
-                $sqlIngreso .= ", metodo_pago = :metodo_pago";
+            if ($ingresoId) {
+                $sqlIngreso = "
+                    UPDATE ingresos
+                    SET concepto = CONCAT('Inscripción - ', :nombre),
+                        fecha    = :fecha_inicio";
+                
+                if (!empty($datos['metodo_pago'])) {
+                    $sqlIngreso .= ", metodo_pago = :metodo_pago";
+                }
+                
+                $sqlIngreso .= "
+                    WHERE id_cliente = :id_cliente";
+
+                $paramsIngreso = [
+                    ':nombre'      => trim($datos['nombre']),
+                    ':fecha_inicio' => $datos['fecha_inicio'],
+                    ':id_cliente'  => $id,
+                ];
+                
+                if (!empty($datos['metodo_pago'])) {
+                    $paramsIngreso[':metodo_pago'] = strtoupper($datos['metodo_pago']);
+                }
+
+                $stmtIngreso = $pdo->prepare($sqlIngreso);
+                $stmtIngreso->execute($paramsIngreso);
             }
-            
-            $sqlIngreso .= "
-                WHERE id_cliente = :id_cliente";
-
-            $paramsIngreso = [
-                ':nombre'      => trim($datos['nombre']),
-                ':fecha_inicio' => $datos['fecha_inicio'],
-                ':id_cliente'  => $id,
-            ];
-            
-            if (!empty($datos['metodo_pago'])) {
-                $paramsIngreso[':metodo_pago'] = strtoupper($datos['metodo_pago']);
-            }
-
-            $stmtIngreso = $pdo->prepare($sqlIngreso);
-            $stmtIngreso->execute($paramsIngreso);
         }
 
         $pdo->commit();
