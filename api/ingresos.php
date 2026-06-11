@@ -20,6 +20,7 @@ if (!$colBanco) {
 $metodo = $_SERVER['REQUEST_METHOD'];
 
 if ($metodo === 'GET') {
+    // ?todos=1  → todos los ingresos sin filtro de fecha
     if (isset($_GET['todos'])) {
         $stmt = $pdo->query("
             SELECT i.*, c.nombre AS cliente_nombre
@@ -27,6 +28,26 @@ if ($metodo === 'GET') {
             LEFT JOIN clientes c ON i.id_cliente = c.id
             ORDER BY i.fecha DESC, i.id DESC
         ");
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC), JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // ?cliente_id=X  → historial completo de un cliente (todas las fechas)
+    if (isset($_GET['cliente_id'])) {
+        $clienteId = (int) $_GET['cliente_id'];
+        if (!$clienteId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'cliente_id inválido']);
+            exit;
+        }
+        $stmt = $pdo->prepare("
+            SELECT i.*, c.nombre AS cliente_nombre
+            FROM ingresos i
+            LEFT JOIN clientes c ON i.id_cliente = c.id
+            WHERE i.id_cliente = :cliente_id
+            ORDER BY i.fecha ASC, i.id ASC
+        ");
+        $stmt->execute([':cliente_id' => $clienteId]);
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC), JSON_UNESCAPED_UNICODE);
         exit;
     }

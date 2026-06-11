@@ -868,7 +868,7 @@
       return `<div class="info-item"><strong>${label}</strong><span>${valorInfo(valor)}</span></div>`;
     }
 
-    function abrirInfo(id) {
+    async function abrirInfo(id) {
       const c = clientesData.find(cliente => Number(cliente.id) === Number(id));
       if (!c) return;
       const metodo = ingresosMap[c.id] || '—';
@@ -917,8 +917,57 @@
             ${infoItem('EPS acompañante', c.acompanante_eps)}
           </div>
         ` : ''}
+
+        <div class="modal-section">Historial de pagos</div>
+        <div id="historialPagosContainer" style="margin-top:4px">
+          <div style="color:#555;font-size:13px;padding:8px 0">Cargando historial...</div>
+        </div>
       `;
       document.getElementById('infoModalOverlay').classList.add('show');
+
+      // Cargar historial de pagos del cliente en segundo plano
+      try {
+        const res = await fetch(`${API}/ingresos.php?cliente_id=${c.id}`);
+        const pagos = await res.json();
+        const container = document.getElementById('historialPagosContainer');
+        if (!container) return;
+        if (!pagos.length) {
+          container.innerHTML = '<div style="color:#555;font-size:13px;padding:8px 0">Sin registros de pago.</div>';
+          return;
+        }
+        const total = pagos.reduce((s, p) => s + parseFloat(p.monto || 0), 0);
+        container.innerHTML = `
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="color:#555;text-align:left;border-bottom:1px solid #2a2d3a">
+                <th style="padding:6px 8px;font-weight:500">Fecha</th>
+                <th style="padding:6px 8px;font-weight:500">Concepto</th>
+                <th style="padding:6px 8px;font-weight:500">Método</th>
+                <th style="padding:6px 8px;font-weight:500;text-align:right">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pagos.map(p => `
+                <tr style="border-bottom:1px solid #1a1d27">
+                  <td style="padding:6px 8px;color:#aaa">${p.fecha}</td>
+                  <td style="padding:6px 8px;color:#e0e0e0">${p.concepto}</td>
+                  <td style="padding:6px 8px;color:#888">${p.metodo_pago || '—'}</td>
+                  <td style="padding:6px 8px;text-align:right;color:#4ade80;font-weight:600">$${Number(p.monto).toLocaleString('es-CO')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" style="padding:8px 8px 4px;color:#555;font-size:12px">Total pagado</td>
+                <td style="padding:8px 8px 4px;text-align:right;color:#c9952a;font-weight:700;font-size:14px">$${total.toLocaleString('es-CO')}</td>
+              </tr>
+            </tfoot>
+          </table>
+        `;
+      } catch(e) {
+        const container = document.getElementById('historialPagosContainer');
+        if (container) container.innerHTML = '<div style="color:#f87171;font-size:13px">No se pudo cargar el historial.</div>';
+      }
     }
 
     function cerrarInfo() { document.getElementById('infoModalOverlay').classList.remove('show'); }

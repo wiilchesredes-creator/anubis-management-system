@@ -186,7 +186,11 @@ if ($metodo === 'PUT') {
         exit;
     }
 
-    $requeridos = ['nombre', 'cedula', 'fecha_nacimiento', 'genero', 'celular', 'eps', 'fecha_inicio', 'fecha_fin'];
+    // fecha_nacimiento no se exige en renovaciones (clientes legacy pueden tenerla nula)
+    $esRenovacionValidacion = !empty($datos['es_renovacion']);
+    $requeridos = $esRenovacionValidacion
+        ? ['nombre', 'cedula', 'genero', 'celular', 'eps', 'fecha_inicio', 'fecha_fin']
+        : ['nombre', 'cedula', 'fecha_nacimiento', 'genero', 'celular', 'eps', 'fecha_inicio', 'fecha_fin'];
     foreach ($requeridos as $campo) {
         if (empty($datos[$campo])) {
             http_response_code(400);
@@ -312,35 +316,44 @@ if ($metodo === 'PUT') {
         $stmt = $pdo->prepare($sqlUpdate);
         $stmt->execute($params);
 
-        // 2. Sincronizar cambios en el ingreso de inscripción si existe
-        // PERO: Solo cuando NO es una renovación (es decir, cuando no hay un concepto de "Renovación" en los datos)
-        // Las renovaciones registran su propio ingreso por separado en ingresos.php
+        // 2. Sincronizar nombre en el ingreso de inscripción original (si existe)
+        // REGLA: Solo se actualiza el concepto cuando el nombre del cliente cambia.
+        //        NUNCA se actualiza la fecha del ingreso original — hacerlo borraría
+        //        el historial (la inscripción quedaría con la fecha de la renovación).
+        //        Las renovaciones insertan su PROPIO ingreso desde el frontend via
+        //        POST /ingresos.php — no se tocan aquí.
         $esRenovacion = !empty($datos['es_renovacion']);
-        
-        if (!$esRenovacion) {
-            $stmtVerificar = $pdo->prepare("SELECT id FROM ingresos WHERE id_cliente = :id_cliente LIMIT 1");
-            $stmtVerificar->execute([':id_cliente' => $id]);
-            $ingresoId = $stmtVerificar->fetchColumn();
 
-            if ($ingresoId) {
+        if (!$esRenovacion) {
+            // Buscar el ingreso de inscripción original del cliente
+            $stmtVerificar = $pdo->prepare("
+                SELECT id FROM ingresos
+                WHERE id_cliente = :id_cliente
+                  AND concepto LIKE 'Inscripción%'
+                ORDER BY id ASC
+                LIMIT 1
+            ");
+            $stmtVerificar->execute([':id_cliente' => $id]);
+            $ingresoOriginalId = $stmtVerificar->fetchColumn();
+
+            if ($ingresoOriginalId) {
+                // Solo actualiza concepto (nombre) y método de pago.
+                // La fecha se preserva intacta para mantener el historial correcto.
                 $sqlIngreso = "
                     UPDATE ingresos
-                    SET concepto = CONCAT('Inscripción - ', :nombre),
-                        fecha    = :fecha_inicio";
-                
+                    SET concepto = CONCAT('Inscripción - ', :nombre)";
+
                 if (!empty($datos['metodo_pago'])) {
                     $sqlIngreso .= ", metodo_pago = :metodo_pago";
                 }
-                
-                $sqlIngreso .= "
-                    WHERE id_cliente = :id_cliente";
+
+                $sqlIngreso .= " WHERE id = :id_ingreso";
 
                 $paramsIngreso = [
-                    ':nombre'      => trim($datos['nombre']),
-                    ':fecha_inicio' => $datos['fecha_inicio'],
-                    ':id_cliente'  => $id,
+                    ':nombre'     => trim($datos['nombre']),
+                    ':id_ingreso' => $ingresoOriginalId,
                 ];
-                
+
                 if (!empty($datos['metodo_pago'])) {
                     $paramsIngreso[':metodo_pago'] = strtoupper($datos['metodo_pago']);
                 }
